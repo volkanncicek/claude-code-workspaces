@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+# No max_line_length: lines break where the code has structure, never to hit a column. See the ruff config in pyproject.toml.
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+# Trailing whitespace is not a line break here, but prose is never hard-wrapped either, so leave the file alone.
+trim_trailing_whitespace = false

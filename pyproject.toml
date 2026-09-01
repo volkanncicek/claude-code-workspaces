@@ -1,0 +1,75 @@
+[project]
+name = "claude-code-workspaces"
+version = "0.1.0"
+description = "Save, restore and manage Claude Code sessions as workspaces. Windows Terminal native."
+requires-python = ">=3.13"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Volkan Çiçek" }]
+keywords = ["claude", "claude-code", "session", "workspace", "windows-terminal", "tui"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    # Do not add a `License :: OSI Approved` classifier here: PyPI rejects an upload that pairs one with the `license` expression above.
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "textual>=8.2.8",
+    "typer>=0.27.0",
+]
+
+[project.urls]
+Repository = "https://github.com/volkanncicek/claude-code-workspaces"
+Issues = "https://github.com/volkanncicek/claude-code-workspaces/issues"
+Changelog = "https://github.com/volkanncicek/claude-code-workspaces/blob/main/CHANGELOG.md"
+
+[project.scripts]
+ccw = "claude_code_workspaces.cli:main"
+
+[build-system]
+# 1.27 is the first release that understands the PEP 639 `license` / `license-files` fields above; an older one rejects them as "license should be a table".
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+# Deliberately wide. Lines are broken where the code has structure, never to hit a column, so E501 and the formatter are both kept out of the way.
+line-length = 320
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "SIM", "RUF", "PTH", "C4", "TID", "DTZ", "PL"]
+ignore = [
+    "E501",     # Line width, for the reason `line-length` above carries.
+    "RUF012",   # Textual's documented idiom for BINDINGS is a plain class-level list.
+    "PLR2004",  # Magic values. A literal read in place beats a constant read somewhere else; the thresholds in the age ladder are only used once each.
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["claude_code_workspaces", "conftest"]
+
+[tool.ruff.lint.flake8-bugbear]
+# Typer declares a command's interface in its defaults. These calls are declarations, not the mutable-default trap B008 is about.
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test helpers are built for readability at the call site: keyword-heavy factories and one-line monkeypatch stubs. A stand-in's parameter list mirrors the real object's, argument count included.
+"tests/*" = ["PLR0913", "PLR0917", "PLW0108"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# `--strict-config` turns a typo in this very table into an error instead of a silently ignored setting.
+addopts = "-q --strict-markers --strict-config"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.5",
+    "ty>=0.0.77",
+]

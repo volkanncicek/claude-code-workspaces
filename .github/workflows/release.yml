@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# The default for every job here. `publish` overrides it below, and a job-level block replaces this one rather than adding to it, which is why `publish` restates `contents: read` alongside the token it needs.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        # setup-uv stopped publishing a moving major tag after v1, so this is the exact release. Dependabot bumps it.
+        uses: astral-sh/setup-uv@v10.0.1
+
+      - name: Install dependencies
+        # `--locked` fails instead of silently re-resolving, so a dependency change committed without its lockfile update cannot pass green. No `--all-extras` (no optional dependencies are declared) and no `--dev` (installing the dev group is the default); both read as load-bearing when they do nothing.
+        run: uv sync --locked
+
+      - name: Check the tag against the version being published
+        # A tag that disagrees with pyproject publishes a version nobody asked for, and PyPI will not let it be replaced afterwards.
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          declared="$(uv run python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          if [ "$tagged" != "$declared" ]; then echo "Tag $GITHUB_REF_NAME does not match the declared version $declared"; exit 1; fi
+
+      - name: Verify
+        # CI runs on main, not on tags, so without this a tag could publish a commit nothing ever checked.
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run ty check
+          uv run pytest
+
+      - name: Build
+        run: uv build
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    # Trusted publishing binds the OIDC token to this repository, this workflow filename and this environment, so none of the three can move without updating the publisher on PyPI. It also cannot be delegated: a reusable workflow or composite action does not get the token, so the publish step stays inline here.
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      # The only credential involved. No PyPI token is stored in secrets.
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        # Sigstore attestations are on by default here; leave them on.
+        uses: pypa/gh-action-pypi-publish@release/v1

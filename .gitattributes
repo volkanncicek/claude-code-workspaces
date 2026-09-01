@@ -1,0 +1,2 @@
+# The repository is stored and checked out with LF everywhere, so `end_of_line = lf` in .editorconfig holds regardless of a contributor's core.autocrlf setting on Windows.
+* text=auto eol=lf

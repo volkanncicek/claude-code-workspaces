@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Stated here rather than inherited from a repository setting that can change without touching this file. This workflow runs on `pull_request`, so it executes code from forks; reading the checkout is all it ever needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Windows is the platform ccw launches panes on; Ubuntu is here to prove the core is platform independent, so it runs the same suite rather than skipping it.
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        # setup-uv stopped publishing a moving major tag after v1, so this is the exact release. Dependabot bumps it.
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        # `--locked` fails instead of silently re-resolving, so a dependency change committed without its lockfile update cannot pass green. No `--all-extras` (no optional dependencies are declared) and no `--dev` (installing the dev group is the default); both read as load-bearing when they do nothing.
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run ty check
+
+      - name: Test
+        run: uv run pytest
