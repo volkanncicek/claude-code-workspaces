@@ -81,7 +81,7 @@ def test_an_unavailable_live_source_still_lists_the_history(sources) -> None:
 
 class TestSearch:
     def row(self, *, session_id: str = "abc123", name: str | None = "Login bug", branch: str | None = "main", first_prompt: str | None = "why is the login failing") -> sessions.SessionRow:
-        project = Path(r"C:\code\api")
+        project = Path("C:/code/api")
         return sessions.SessionRow(session_id=session_id, cwd=project, root=project, title=name, agent_name=None, archived=False, status=None, last_active=None, transcript=None, branch=branch, first_prompt=first_prompt)
 
     def test_an_empty_query_keeps_everything(self) -> None:
@@ -445,7 +445,7 @@ def test_collecting_never_prunes_a_mark_whose_transcript_has_gone(sources) -> No
 
 class TestTheShelfSortsToTheTop:
     def row(self, session_id: str, *, live: bool = False, kept: bool = False, age: int = 0) -> sessions.SessionRow:
-        project = Path(r"C:\code\api")
+        project = Path("C:/code/api")
         return sessions.SessionRow(session_id=session_id, cwd=project, root=project, title=None, agent_name=None, archived=False, status="idle" if live else None, last_active=datetime.fromtimestamp(age, tz=UTC), transcript=None, branch=None, first_prompt=None, kept=kept)
 
     def test_kept_sessions_sit_above_the_rest(self) -> None:

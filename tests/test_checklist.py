@@ -11,7 +11,7 @@ from claude_code_workspaces.trust import TrustState
 
 
 def entry(session_id: str, *, source: RestoreSource = "snapshot", live: bool = False, transcript: bool = True, trusted: bool = True, name: str | None = None, title: str | None = None) -> RestoreEntry:
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
     return RestoreEntry(
         session_id=session_id,
         cwd=root,

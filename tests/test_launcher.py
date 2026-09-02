@@ -23,7 +23,7 @@ def payloads(argv: list[str]) -> list[str]:
 
 def test_a_project_pairs_its_sessions_and_overflows_into_another_tab() -> None:
     """Two panes to a tab is the readable limit; a third session opens a second tab for the same project rather than shrinking the first."""
-    api, worker = Path(r"C:\code\api"), Path(r"C:\code\worker")
+    api, worker = Path("C:/code/api"), Path("C:/code/worker")
     groups = {api: [entry("s1", api, api), entry("s2", api, api), entry("s3", api, api)], worker: [entry("s4", worker, worker)]}
 
     argv = WindowsTerminalLauncher().build(groups)
@@ -47,7 +47,7 @@ def test_the_overflow_tab_carries_the_same_project_title() -> None:
 
 
 def test_a_pair_sits_side_by_side() -> None:
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
     groups = {root: [entry(f"s{index}", root, root) for index in range(4)]}
 
     argv = WindowsTerminalLauncher().build(groups)
@@ -57,7 +57,7 @@ def test_a_pair_sits_side_by_side() -> None:
 
 def test_a_pane_outlives_the_session_it_opened() -> None:
     """`-EncodedCommand` is a one-shot mode: pwsh exits the moment `claude` does, and Windows Terminal then closes the pane. Measured 2026-08-10 — a pane without `-NoExit` vanished as soon as its command returned, so ending a session took its pane with it and left nothing to resume from."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root)]})
 
@@ -66,7 +66,7 @@ def test_a_pane_outlives_the_session_it_opened() -> None:
 
 def test_every_pane_scrubs_the_markers_and_forces_persistence() -> None:
     """Without this a restored session writes no transcript and never registers in `claude agents`."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     script = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}))[0]
 
@@ -79,7 +79,7 @@ def test_every_pane_scrubs_the_markers_and_forces_persistence() -> None:
 
 def test_claude_is_invoked_by_absolute_path() -> None:
     """`wt` panes inherit the system PATH, so a user-PATH install would not be found."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     script = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}))[0]
 
@@ -87,6 +87,7 @@ def test_claude_is_invoked_by_absolute_path() -> None:
 
 
 def test_a_quote_in_a_path_cannot_break_out_of_the_script() -> None:
+    # Backslashes on purpose, and the one place in this file that keeps them: the assertion is the exact escaped string, and a backslash survives as an ordinary character on both platforms, so `C:\code\o'brien` reaches the script byte for byte either way. Forward slashes would reach it as `C:/code/o'brien` on POSIX and break the assertion — do not sweep this one.
     root = Path(r"C:\code\o'brien")
 
     script = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}))[0]
@@ -96,7 +97,7 @@ def test_a_quote_in_a_path_cannot_break_out_of_the_script() -> None:
 
 def test_each_pane_starts_in_its_own_working_directory() -> None:
     """Set by the pane script, not by `wt -d` — see `test_a_semicolon_in_a_path_cannot_split_the_command_line`."""
-    root = Path(r"C:\code\repo")
+    root = Path("C:/code/repo")
     nested = root / "service"
     groups = {root: [entry("s1", root, root), entry("s2", nested, root)]}
 
@@ -115,7 +116,7 @@ def test_a_pane_stops_rather_than_resuming_in_the_wrong_directory() -> None:
 
     Deliberately not a filesystem check in Python: the directory can disappear between planning a restore and launching it, so the only test that means anything is the one the pane runs at the moment it runs.
     """
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     lines = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}))[0].splitlines()
 
@@ -126,7 +127,7 @@ def test_a_pane_stops_rather_than_resuming_in_the_wrong_directory() -> None:
 
 def test_the_directory_guard_survives_a_fork() -> None:
     """`--fork-session` appends to the resume line, which is the line the guard protects."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     lines = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}, fork=True))[0].splitlines()
 
@@ -139,7 +140,7 @@ def test_a_semicolon_in_a_path_cannot_split_the_command_line() -> None:
 
     The cwd therefore never goes through the argv at all, and the tab title has the character removed.
     """
-    root = Path(r"C:\code\a;b")
+    root = Path("C:/code/a;b")
 
     argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root)]})
 
@@ -154,7 +155,7 @@ def test_an_empty_plan_opens_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: started.append(args))
 
     WindowsTerminalLauncher().launch({})
-    WindowsTerminalLauncher().launch({Path(r"C:\code\app"): []})
+    WindowsTerminalLauncher().launch({Path("C:/code/app"): []})
 
     assert started == []
 
@@ -181,7 +182,7 @@ def test_the_spawn_environment_is_scrubbed_as_well(monkeypatch: pytest.MonkeyPat
 
 def test_a_new_window_is_asked_for_by_name() -> None:
     """Nothing in `ccw` asks for one today — every path opens into the window you are in — but the intention still has to map to the right flag."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}, window=launcher.NEW_WINDOW)
 
@@ -190,7 +191,7 @@ def test_a_new_window_is_asked_for_by_name() -> None:
 
 def test_a_single_resume_goes_to_the_window_you_are_in() -> None:
     """`last` is the most recently used window, which is the one the key was pressed in."""
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}, window=launcher.CURRENT_WINDOW)
 
@@ -200,7 +201,7 @@ def test_a_single_resume_goes_to_the_window_you_are_in() -> None:
 def test_the_window_choice_reaches_the_spawned_command(monkeypatch: pytest.MonkeyPatch) -> None:
     started: list[list[str]] = []
     monkeypatch.setattr(launcher.subprocess, "Popen", lambda argv, **_kwargs: started.append(argv))
-    root = Path(r"C:\code\app")
+    root = Path("C:/code/app")
 
     WindowsTerminalLauncher().launch({root: [entry("s1", root, root)]}, window=launcher.CURRENT_WINDOW)
 

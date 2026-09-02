@@ -10,8 +10,8 @@ import pytest
 from claude_code_workspaces import live, shutdown
 
 PAYLOAD = [
-    {"pid": 26140, "cwd": r"C:\code\api", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "api-eb", "status": "busy"},
-    {"pid": 20832, "cwd": r"C:\code\worker", "kind": "interactive", "startedAt": 1785311592036, "sessionId": "s2", "name": None, "status": "idle"},
+    {"pid": 26140, "cwd": "C:/code/api", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "api-eb", "status": "busy"},
+    {"pid": 20832, "cwd": "C:/code/worker", "kind": "interactive", "startedAt": 1785311592036, "sessionId": "s2", "name": None, "status": "idle"},
 ]
 
 
@@ -57,7 +57,7 @@ def test_the_documented_fields_are_carried_through(monkeypatch: pytest.MonkeyPat
     assert [s.session_id for s in sessions] == ["s1", "s2"]
     assert sessions[0].name == "api-eb"
     assert sessions[0].status == "busy"
-    assert sessions[0].cwd == Path(r"C:\code\api")
+    assert sessions[0].cwd == Path("C:/code/api")
     assert sessions[1].name is None
 
 
@@ -65,7 +65,7 @@ def test_the_output_is_decoded_as_utf8_whatever_the_locale_codepage_is(monkeypat
     """Not a style choice: on a Turkish Windows the locale codepage is cp1252, and it decodes a Turkish agent name into mojibake silently rather than raising."""
     spawned: list = []
     # The dotless i is the data under test, not a slip. RUF001 offers to replace it with an ASCII `i`, which would remove the only character that makes this a decoding test.
-    payload = [{"pid": 1, "cwd": r"C:\code", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "Aile ağacı uygulaması", "status": "idle"}]  # noqa: RUF001
+    payload = [{"pid": 1, "cwd": "C:/code", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "Aile ağacı uygulaması", "status": "idle"}]  # noqa: RUF001
     monkeypatch.setattr(live.subprocess, "Popen", fake_popen(json.dumps(payload, ensure_ascii=False), seen=spawned))
 
     sessions = live.live_sessions()
@@ -126,7 +126,7 @@ def test_a_hang_becomes_an_error_rather_than_a_hang(monkeypatch: pytest.MonkeyPa
 
 def test_a_session_waiting_on_a_prompt_keeps_the_status_the_list_paints(monkeypatch: pytest.MonkeyPatch) -> None:
     """Claude Code 2.1.212 moved sandbox, MCP-input and managed-settings waits out of `busy` and widened `waitingFor`. Both are reported through the same lower-case `status`, and the extra field is not ours to read, so the whole change reaches us as more sessions saying `waiting`."""
-    payload = [{"pid": 1, "cwd": r"C:\code\api", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "api-eb", "status": "waiting", "waitingFor": "sandbox request"}]
+    payload = [{"pid": 1, "cwd": "C:/code/api", "kind": "interactive", "startedAt": 1785311562621, "sessionId": "s1", "name": "api-eb", "status": "waiting", "waitingFor": "sandbox request"}]
     monkeypatch.setattr(live.subprocess, "Popen", fake_popen(json.dumps(payload)))
 
     assert live.live_sessions()[0].status == "waiting"
