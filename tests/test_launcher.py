@@ -1,4 +1,7 @@
-"""The launcher. Nested-session marker scrubbing is enforced here, and a regression would be silent, so the pane script is asserted byte for byte."""
+"""The launcher. Nested-session marker scrubbing is enforced here, and a regression would be silent, so the pane script is asserted byte for byte.
+
+`C:\\wt.exe`, `C:\\pwsh.exe` and `C:\\claude.exe` throughout are the table the autouse `_no_real_panes` fixture in `conftest.py` answers `shutil.which` from, so nothing here depends on what is installed on the machine running the suite.
+"""
 
 import base64
 from pathlib import Path
@@ -8,11 +11,6 @@ import pytest
 from claude_code_workspaces import launcher
 from claude_code_workspaces.launcher import WindowsTerminalLauncher
 from claude_code_workspaces.restore import RestoreEntry
-
-
-@pytest.fixture(autouse=True)
-def tools_on_path(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(launcher.shutil, "which", lambda name: {"wt": r"C:\wt.exe", "pwsh": r"C:\pwsh.exe", "claude": r"C:\claude.exe"}.get(name))
 
 
 def entry(session_id: str, cwd: Path, root: Path) -> RestoreEntry:
@@ -38,7 +36,8 @@ def test_a_project_pairs_its_sessions_and_overflows_into_another_tab() -> None:
 
 
 def test_the_overflow_tab_carries_the_same_project_title() -> None:
-    root = Path(r"C:\code\app")
+    # Forward slashes on purpose: the title comes from `root.name`, and a backslash is an ordinary character in a POSIX path, so `Path(r"C:\code\app").name` is the whole string on Linux and `app` only on Windows. Written this way both platforms see the same three parts.
+    root = Path("C:/code/app")
     groups = {root: [entry(f"s{index}", root, root) for index in range(3)]}
 
     argv = WindowsTerminalLauncher().build(groups)

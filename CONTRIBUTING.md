@@ -27,7 +27,7 @@ uv run ty check
 uv run pytest
 ```
 
-The suite takes a few minutes. It needs `git` on `PATH`, and that is all — you do not need Claude Code installed. The home directory is redirected to a temporary one, live session data is faked, and an autouse fixture refuses to let anything spawn a real terminal pane, so running the tests cannot touch your own sessions.
+The suite takes a few minutes. It needs `git` on `PATH`, and that is all — you do not need Claude Code installed. The home directory is redirected to a temporary one, live session data is faked, and an autouse fixture refuses to let anything spawn a real terminal pane and answers the launcher's `wt` / `pwsh` / `claude` lookup from a table rather than from your `PATH`, so running the tests cannot touch your own sessions and cannot pass or fail on what you happen to have installed.
 
 If you are on Linux or macOS, everything except pane launching still runs, which is the point of the next section.
 
