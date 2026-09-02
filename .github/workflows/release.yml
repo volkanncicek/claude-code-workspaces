@@ -65,3 +65,30 @@ jobs:
       - name: Publish to PyPI
         # Sigstore attestations are on by default here; leave them on.
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    # After PyPI, never before it, so a release page cannot announce a version that is not installable yet.
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # The only write this workflow performs, and it is confined to this job. `publish` keeps its own narrower block.
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # The notes are this version's CHANGELOG section: everything after its heading, stopping at the next version heading or at the link definitions that close the file. The second awk drops the blank lines the heading leaves behind.
+          awk -v v="## [$version]" 'index($0,v)==1{f=1;next} f&&(/^## \[/||/^\[[^]]+\]: /){exit} f' CHANGELOG.md | awk 'NF{p=1} p' > notes.md
+          # An empty section means the tag and the CHANGELOG disagree, which is worth failing on rather than publishing a release with no notes.
+          if [ ! -s notes.md ]; then echo "CHANGELOG.md has no section for $version"; exit 1; fi
+          gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
