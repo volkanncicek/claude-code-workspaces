@@ -2,7 +2,7 @@
 
 A TUI and CLI that saves, restores and manages Claude Code sessions as named workspaces, on Windows Terminal.
 
-The design record for the development period lives at `docs/DESIGN.local.md`, which is gitignored and deliberately not published. It holds the decisions, their reasons and the measurements behind them, and it is a record rather than forever canon — when behaviour is in doubt, prefer the non-negotiables below and the self-contained comments in the code itself.
+Two records live under `docs/`, both gitignored and deliberately not published. `DESIGN.local.md` holds the decisions, their reasons and the measurements behind them; it is a record rather than forever canon, so when behaviour is in doubt prefer the non-negotiables below and the self-contained comments in the code itself. `BACKLOG.local.md` holds what is decided but not done, what is deliberately out of scope, and what is still an open question — **read it before proposing work**, because several things that look like gaps are deliberate and several others already carry the measurement that should decide them.
 
 ## Non-negotiables
 
