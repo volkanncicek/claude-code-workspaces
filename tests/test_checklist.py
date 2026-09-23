@@ -10,7 +10,7 @@ from claude_code_workspaces.restore import DEFAULT_PANE_CAP, RestoreEntry, Resto
 from claude_code_workspaces.trust import TrustState
 
 
-def entry(session_id: str, *, source: RestoreSource = "snapshot", live: bool = False, transcript: bool = True, trusted: bool = True, name: str | None = None, title: str | None = None) -> RestoreEntry:
+def entry(session_id: str, *, source: RestoreSource = "snapshot", live: bool = False, transcript: bool = True, cwd_gone: bool = False, trusted: bool = True, name: str | None = None, title: str | None = None) -> RestoreEntry:
     root = Path("C:/code/app")
     return RestoreEntry(
         session_id=session_id,
@@ -23,6 +23,7 @@ def entry(session_id: str, *, source: RestoreSource = "snapshot", live: bool = F
         trust=TrustState(cwd=root, root=root, trusted=trusted, reason="trusted" if trusted else "untrusted"),
         transcript=root / "t.jsonl" if transcript else None,
         live=live,
+        cwd_gone=cwd_gone,
     )
 
 
@@ -45,13 +46,13 @@ async def test_snapshot_entries_start_checked_and_heuristic_ones_do_not() -> Non
 
 
 async def test_unrestorable_rows_are_shown_but_disabled() -> None:
-    plan = plan_of(entry("s1"), entry("s2", live=True), entry("s3", transcript=False))
+    plan = plan_of(entry("s1"), entry("s2", live=True), entry("s3", transcript=False), entry("s4", cwd_gone=True))
 
     app = checklist(plan)
     async with app.run_test() as pilot:
         await pilot.pause()
         selection_list = app.screen.query_one(SelectionList)
-        assert selection_list.option_count == 3
+        assert selection_list.option_count == 4
         await pilot.press("a")
         assert selection_list.selected == ["s1"]
 
@@ -121,6 +122,8 @@ def test_a_row_carries_what_is_needed_to_decide() -> None:
 def test_a_row_says_why_it_cannot_be_opened() -> None:
     assert "already running" in prompt_for(entry("s1", live=True))
     assert "transcript gone" in prompt_for(entry("s1", transcript=False))
+    assert "directory gone" in prompt_for(entry("s1", cwd_gone=True))
+    assert "trust" not in prompt_for(entry("s1", cwd_gone=True, trusted=False)), "a pane that cannot open will not prompt either"
     assert "will prompt for trust" in prompt_for(entry("s1", trusted=False))
 
 

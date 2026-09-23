@@ -186,6 +186,19 @@ class TestPlanning:
         assert [entry.session_id for entry in plan.dead] == ["gone"]
         assert plan.default_selection() == []
 
+    def test_a_member_whose_directory_is_gone_is_reported_not_dropped(self, home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        worktree = home / "code" / "app-feature"
+        worktree.mkdir(parents=True)
+        write_transcript(home, "s1", worktree, conversation("s1", worktree))
+        monkeypatch.setattr(live, "try_live_sessions", lambda: ([], None))
+        workspaces.save(workspaces.from_live("w", [live_session("s1", worktree)]))
+        worktree.rmdir()
+
+        plan = restore.plan_for_workspace(workspaces.load("w"))
+
+        assert [entry.session_id for entry in plan.dead] == ["s1"]
+        assert plan.default_selection() == []
+
     def test_an_empty_workspace_says_how_to_fill_it(self, home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(live, "try_live_sessions", lambda: ([], None))
         workspaces.save(workspaces.from_live("w", []))

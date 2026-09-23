@@ -51,8 +51,8 @@ def workspace(name: str, *, members: int = 0) -> workspaces.Workspace:
     return workspaces.Workspace(name=name, members=[workspaces.Member(f"{name}-{index}", ROOT, None) for index in range(members)], created=now, updated=now)
 
 
-def entry(session_id: str, *, transcript: bool = True, live: bool = False, title: str | None = "Login bug") -> RestoreEntry:
-    return RestoreEntry(session_id=session_id, cwd=ROOT, root=ROOT, agent_name=None, title=title, source="workspace", last_active=datetime.now(tz=UTC), transcript=ROOT / f"{session_id}.jsonl" if transcript else None, live=live)
+def entry(session_id: str, *, transcript: bool = True, live: bool = False, cwd_gone: bool = False, title: str | None = "Login bug") -> RestoreEntry:
+    return RestoreEntry(session_id=session_id, cwd=ROOT, root=ROOT, agent_name=None, title=title, source="workspace", last_active=datetime.now(tz=UTC), transcript=ROOT / f"{session_id}.jsonl" if transcript else None, live=live, cwd_gone=cwd_gone)
 
 
 def row(session_id: str, *, title: str | None = "Login bug") -> SessionRow:
@@ -411,6 +411,11 @@ class TestWorkspaceMembersReturnsAnEditRatherThanPerformingOne:
         screen = WorkspaceMembers("w", [entry("gone", transcript=False)])
         async with opened(screen) as (_app, _pilot, _answers):
             assert cells(screen)[0][3] == "transcript gone"
+
+    async def test_a_member_whose_directory_is_gone_says_so(self) -> None:
+        screen = WorkspaceMembers("w", [entry("moved", cwd_gone=True)])
+        async with opened(screen) as (_app, _pilot, _answers):
+            assert cells(screen)[0][3] == "directory gone"
 
     async def test_a_running_member_says_so(self) -> None:
         screen = WorkspaceMembers("w", [entry("busy", live=True), entry("idle")])

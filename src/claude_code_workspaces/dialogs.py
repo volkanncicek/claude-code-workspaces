@@ -271,7 +271,7 @@ class WorkspaceMembers(Dialog[tuple[MemberAction, list[str]] | None]):
         for entry in self.entries:
             cells = (entry.label[:34], entry.root.name[:20], age(entry.last_active), _member_state(entry))
             # Dim rather than colour: marked on monochrome and never collides with the session-list palette.
-            style = "dim" if entry.missing else ""
+            style = "dim" if entry.missing or entry.cwd_gone else ""
             table.add_row(*(Text(cell, style=style) for cell in cells), key=entry.session_id)
 
     def _dismiss_with(self, action: MemberAction, session_ids: list[str]) -> None:
@@ -297,6 +297,8 @@ class WorkspaceMembers(Dialog[tuple[MemberAction, list[str]] | None]):
 def _member_state(entry: RestoreEntry) -> str:
     if entry.missing:
         return "transcript gone"
+    if entry.cwd_gone:
+        return "directory gone"
     return "running" if entry.live else ""
 
 

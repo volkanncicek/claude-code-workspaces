@@ -234,6 +234,7 @@ def _serialise(plan: RestorePlan, limit: int) -> dict:
                 "lastActive": entry.last_active.isoformat() if entry.last_active else None,
                 "live": entry.live,
                 "missing": entry.missing,
+                "cwdGone": entry.cwd_gone,
                 "restorable": entry.restorable,
                 "trust": entry.trust.reason if entry.trust else None,
                 "preselected": entry.session_id in preselected,

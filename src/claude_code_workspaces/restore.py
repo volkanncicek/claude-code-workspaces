@@ -43,6 +43,8 @@ class RestoreEntry:
     trust: TrustState | None = None
     transcript: Path | None = None
     live: bool = False
+    # Stat-ed once while the plan is built, so the checklist can say so before a pane opens. It is advance notice, not the guard: the directory can still vanish before launch, and the pane script's own `Set-Location` check is what stops a resume in the wrong place.
+    cwd_gone: bool = False
 
     @property
     def missing(self) -> bool:
@@ -51,7 +53,7 @@ class RestoreEntry:
 
     @property
     def restorable(self) -> bool:
-        return not self.missing and not self.live
+        return not self.missing and not self.live and not self.cwd_gone
 
     @property
     def label(self) -> str:
@@ -81,8 +83,8 @@ class RestorePlan:
 
     @property
     def dead(self) -> list[RestoreEntry]:
-        """Entries whose transcript is gone. One name for the concept `RestoreEntry.missing` names per entry."""
-        return [entry for entry in self.entries if entry.missing]
+        """Entries that cannot be opened however long you wait: the transcript or the working directory is gone. Running is not in here, because it passes."""
+        return [entry for entry in self.entries if entry.missing or entry.cwd_gone]
 
     def default_selection(self, *, cap: int = DEFAULT_PANE_CAP) -> list[str]:
         """Checklist preselection: openable snapshot/workspace entries up to `cap`. Nothing if liveness unknown. Heuristic never preselected. Stale snapshot → workspace only."""
@@ -182,6 +184,7 @@ def _materialise(plan: RestorePlan, candidates: dict[str, _Candidate], live_ids:
                 trust=trust_for(cwd, roots),
                 transcript=path,
                 live=session_id in live_ids,
+                cwd_gone=not cwd.is_dir(),
             )
         )
 

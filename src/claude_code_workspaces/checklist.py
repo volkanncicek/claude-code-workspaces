@@ -26,6 +26,8 @@ def prompt_for(entry: RestoreEntry) -> str:
         parts.append("already running")
     elif entry.missing:
         parts.append("transcript gone")
+    elif entry.cwd_gone:
+        parts.append("directory gone")
     elif entry.trust and entry.trust.prompts:
         parts.append("will prompt for trust")
     return "  ".join(parts)

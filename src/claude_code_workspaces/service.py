@@ -207,7 +207,14 @@ class NamedRestore:
 
     @property
     def dead_note(self) -> str:
-        return f"{len(self.dead)} session(s) in '{self.name}' no longer have a transcript."
+        transcripts = sum(1 for entry in self.dead if entry.missing)
+        directories = len(self.dead) - transcripts
+        notes = []
+        if transcripts:
+            notes.append(f"{transcripts} session(s) in '{self.name}' no longer have a transcript.")
+        if directories:
+            notes.append(f"{directories} session(s) in '{self.name}' no longer have their working directory.")
+        return " ".join(notes)
 
 
 def plan_named_restore(name: str, *, cap: int = DEFAULT_PANE_CAP) -> NamedRestore:
@@ -220,9 +227,9 @@ def plan_named_restore(name: str, *, cap: int = DEFAULT_PANE_CAP) -> NamedRestor
     entries = plan.openable
     dead = tuple(plan.dead)
     if not entries:
-        # Prefer plan.notes when the live source failed; otherwise the set is empty, all live, or transcripts are gone. A borrowed note means the environment could not answer, which is a different class from having nothing to open.
+        # Prefer plan.notes when the live source failed; otherwise the set is empty, all live, or transcripts or directories are gone. A borrowed note means the environment could not answer, which is a different class from having nothing to open.
         note = plan.notes[0] if plan.notes else None
-        reason = note or f"Nothing in '{name}' can be opened: already running, or the transcripts are gone."
+        reason = note or f"Nothing in '{name}' can be opened: already running, or the transcripts or working directories are gone."
         return NamedRestore(name=name, cap=cap, plan=plan, dead=dead, blocked=_failed(reason, UNAVAILABLE if note else NOTHING))
     return NamedRestore(name=name, cap=cap, plan=plan, openable=tuple(entry.session_id for entry in entries), dead=dead)
 
@@ -236,7 +243,7 @@ def preview_restore(plan: RestorePlan, session_ids: Iterable[str], *, window: Wi
     """Build the launcher argv without spawning. Same selection rules as `launch_restore`."""
     chosen, groups = _chosen_groups(plan, session_ids)
     if not groups:
-        return _failed("Nothing to open: every chosen session is already running, or its transcript is gone.", NOTHING)
+        return _failed("Nothing to open: every chosen session is already running, or its transcript or working directory is gone.", NOTHING)
     launcher = default_launcher()
     try:
         argv = launcher.build(groups, window=window)
@@ -254,7 +261,7 @@ def launch_restore(plan: RestorePlan, session_ids: Iterable[str], *, source: str
     """Open the chosen panes and report trust prompts. Caller chooses the set (checklist vs named open-all)."""
     chosen, groups = _chosen_groups(plan, session_ids)
     if not groups:
-        return _failed("Nothing to open: every chosen session is already running, or its transcript is gone.", NOTHING)
+        return _failed("Nothing to open: every chosen session is already running, or its transcript or working directory is gone.", NOTHING)
     launcher = default_launcher()
     try:
         launcher.launch(groups, window=window)
@@ -282,6 +289,8 @@ def resume_session(row: SessionRow, *, fork: bool = False) -> Outcome:
         return _failed(f"{row.label} is already running.")
     if row.transcript is None:
         return _failed(f"{row.label} has no transcript to resume.")
+    if not row.cwd.is_dir():
+        return _failed(f"{row.label} cannot be resumed: its working directory {row.cwd} is gone.")
     entry = RestoreEntry(
         session_id=row.session_id,
         cwd=row.cwd,

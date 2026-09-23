@@ -145,6 +145,27 @@ def test_a_session_whose_transcript_is_gone_is_reported_not_dropped(home: Path, 
     assert [entry.session_id for entry in plan.dead] == ["gone"]
 
 
+def test_a_session_whose_directory_is_gone_is_reported_not_dropped(home: Path, no_live) -> None:
+    """A removed worktree or a renamed project leaves the transcript behind, so the only sign is the directory itself."""
+    root = make_repo(home / "code" / "app")
+    worktree = home / "code" / "app-feature"
+    worktree.mkdir(parents=True)
+    write_claude_config(home, {root: True})
+    write_transcript(home, "s1", worktree, conversation("s1", worktree))
+    write_transcript(home, "s2", root, conversation("s2", root))
+    snapshot.take([live_session("s1", worktree, name="s1"), live_session("s2", root, name="s2")])
+    worktree.rmdir()
+
+    plan = restore.build_plan()
+
+    gone = next(entry for entry in plan.entries if entry.session_id == "s1")
+    assert gone.cwd_gone
+    assert not gone.missing, "the transcript is still there; only the directory went"
+    assert not gone.restorable
+    assert [entry.session_id for entry in plan.dead] == ["s1"]
+    assert plan.default_selection() == ["s2"]
+
+
 def test_a_heuristic_candidate_borrows_its_name_from_the_transcript(home: Path, no_live) -> None:
     root = make_repo(home / "code" / "app")
     write_claude_config(home, {root: True})
