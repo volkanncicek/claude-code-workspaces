@@ -23,7 +23,7 @@ ccw restore    # rebuild what was open before a crash or a reboot
 
 ## Install
 
-Either line works and both give you a `ccw` command. If [uv](https://docs.astral.sh/uv/) means nothing to you, take the second one: `pip` ships with Python.
+The package is [`claude-code-workspaces` on PyPI](https://pypi.org/project/claude-code-workspaces/). Either line works and both give you a `ccw` command. If [uv](https://docs.astral.sh/uv/) means nothing to you, take the second one: `pip` ships with Python.
 
 ```powershell
 uv tool install claude-code-workspaces
