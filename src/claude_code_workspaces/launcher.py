@@ -50,7 +50,7 @@ def _tab_title(root: Path) -> str:
 def _pane_script(entry: RestoreEntry, claude: str, *, fork: bool = False) -> str:
     """Pane PowerShell: scrub nested-session env here — `wt` panes inherit the parent terminal's environment.
 
-    `-ErrorAction Stop` on the `Set-Location` is what keeps a session from resuming in the wrong project. The default `$ErrorActionPreference` is `Continue`, so a `Set-Location` to a directory that has since been deleted, renamed or unmounted prints an error and the script carries straight on, resuming that conversation in whatever directory the pane happened to start in — the tab title is right, the session really does resume, and Claude Code reads and writes files in the wrong repository. Terminating instead leaves the pane at a prompt (`pwsh -NoExit`) with PowerShell's own message, which already names the missing path and the command that could not reach it, so no message of ours is added on top of it.
+    `-ErrorAction Stop` on the `Set-Location` is what keeps a session from resuming in the wrong project. The default `$ErrorActionPreference` is `Continue`, so a `Set-Location` to a directory that has since been deleted, renamed or unmounted prints an error and the script carries straight on, resuming that conversation in whatever directory the pane happened to start in — the tab title is right, the session really does resume, and Claude Code reads and writes files in the wrong repository. Terminating instead leaves the pane at a prompt (`-NoExit`) with PowerShell's own message, which already names the missing path and the command that could not reach it, so no message of ours is added on top of it.
 
     The check belongs here rather than in Python: a directory can disappear between planning a restore and launching it, so the only test that means anything is the one the pane runs at the moment it runs.
     """
@@ -79,19 +79,21 @@ class WindowsTerminalLauncher:
 
     def build(self, groups: dict[Path, list[RestoreEntry]], *, fork: bool = False, window: Window = NEW_WINDOW) -> list[str]:
         terminal = shutil.which("wt")
-        shell = shutil.which("pwsh")
+        # Windows PowerShell 5.1 ships with every Windows, so requiring pwsh refused users who had a working shell. The fallback fires only when pwsh is absent, so no PowerShell 7 module path sits in the inherited `PSModulePath`, which is what breaks 5.1 launched from a pwsh parent. Measured 2026-09-23 with Windows PowerShell 5.1.26100 and `-NoProfile`: the pane script's `CLAUDE_*` scrub leaves only `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE`, and `Set-Location -ErrorAction Stop` reaches the `claude` call for an existing directory and terminates before it for a missing one.
+        shell = shutil.which("pwsh") or shutil.which("powershell")
         claude = shutil.which("claude")
         if terminal is None or shell is None or claude is None:
+            # A bare binary name was misread: "pwsh" did not tell a user it meant a PowerShell they did not have.
             missing = [
-                name
-                for name, found in (
-                    ("wt", terminal),
-                    ("pwsh", shell),
-                    ("claude", claude),
+                description
+                for description, found in (
+                    ("Windows Terminal (`wt`), install with `winget install --id Microsoft.WindowsTerminal --source winget`", terminal),
+                    ("PowerShell (`pwsh`), install with `winget install --id Microsoft.PowerShell --source winget` and open a new terminal", shell),
+                    ("Claude Code (`claude`)", claude),
                 )
                 if found is None
             ]
-            raise LauncherUnavailable(f"Not on PATH: {', '.join(missing)}.")
+            raise LauncherUnavailable(f"Not on PATH: {'; '.join(missing)}.")
 
         argv = [terminal, "-w", _WT_WINDOW[window]]
         opened = False
@@ -106,7 +108,7 @@ class WindowsTerminalLauncher:
                 else:
                     argv += ["split-pane", "-V"]
                 # No `-d`: a `;` in the path cannot be quoted through `wt`'s parser (see `_tab_title`). The pane script sets the directory itself, escaped.
-                # `-NoExit`: `-EncodedCommand` is a one-shot mode, so without it pwsh exits the moment `claude` does and the pane closes with it. Ending a session should leave a prompt to resume from, not take the pane away.
+                # `-NoExit`: `-EncodedCommand` is a one-shot mode, so without it PowerShell exits the moment `claude` does and the pane closes with it. Ending a session should leave a prompt to resume from, not take the pane away.
                 argv += [
                     shell,
                     "-NoExit",
