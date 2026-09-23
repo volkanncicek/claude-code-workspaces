@@ -1,104 +1,95 @@
 # claude-code-workspaces
 
-**A library for your Claude Code conversations: search them, keep them, group them into named workspaces, and open a whole set back into Windows Terminal tabs and split panes.**
+**Search your Claude Code conversations, keep the ones that matter, group them into named workspaces, and reopen a whole set as Windows Terminal tabs and split panes.**
 
 ![The ccw session list in Windows Terminal: one row per conversation with its project, branch and when it was last seen, running sessions marked at the top](https://raw.githubusercontent.com/volkanncicek/claude-code-workspaces/main/docs/screenshot.png)
 
-Your Claude Code conversations pile up on disk — hundreds of them, keyed by UUID, spread across every project you have touched. `ccw` is the list you never had: search them, set one aside, name a set of them, and open that set back into real tabs and panes, each in the right directory, each resuming the right conversation.
-
-It reads what is on disk, so it reaches every conversation you have ever had — including the ones that started on another machine, in another terminal, or months ago.
+`ccw` reads every conversation Claude Code has saved on disk, including ones that finished months ago, started on another machine, or never ran under a session manager. Each one reopens in its own directory, resuming the right conversation.
 
 ```
-ccw            # interactive TUI — search, keep, and open a set
-ccw list       # the workspaces you have named
-ccw restore    # rebuild what was open before a crash or a reboot
+ccw            # the TUI: search, keep, and open a set
+ccw list       # your named workspaces
+ccw restore    # reopen what was running before a crash or a reboot
 ```
 
-## Before you install
+## Requirements
 
 Everything except opening panes works on Windows, macOS and Linux:
 
 - **Python 3.13 or later.**
-- **Claude Code**, recent enough for `claude agents --json`, which arrived in 2.1.145. The tool also needs the `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE` environment variable; that one is documented in Claude Code's environment-variable reference, but no release note says which version introduced it, so no minimum is claimed here. If your build is too old the symptom is specific: restored sessions do not show up in `claude agents` and write no transcript. If you see that, update Claude Code.
+- **Claude Code 2.1.145 or later**, for `claude agents --json`. If restored sessions never appear in `claude agents` and write no transcript, your build predates `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE`: update Claude Code.
 
 Opening panes needs one supported terminal:
 
-- **Windows Terminal** on Windows 10 or 11, with PowerShell 7 or Windows PowerShell 5.1. Either shell works, so nothing extra to install: panes run in `pwsh` when it is installed and in the `powershell` that ships with Windows otherwise.
-
-[Platform support](#platform-support) says why only this step depends on the platform.
+- **Windows Terminal** on Windows 10 or 11, with PowerShell 7 or the Windows PowerShell 5.1 that ships with Windows. Nothing extra to install: panes use `pwsh` when it is there and `powershell` otherwise.
 
 ## Install
 
-The package is [`claude-code-workspaces` on PyPI](https://pypi.org/project/claude-code-workspaces/). Either line works and both give you a `ccw` command. If [uv](https://docs.astral.sh/uv/) means nothing to you, take the second one: `pip` ships with Python.
+From [PyPI](https://pypi.org/project/claude-code-workspaces/), with either:
 
 ```powershell
 uv tool install claude-code-workspaces
 pip install claude-code-workspaces
 ```
 
-With uv you can also run it once without installing anything. The package and the command have different names, so both have to be named:
+Or run it once without installing: `uvx --from claude-code-workspaces ccw`.
 
-```powershell
-uvx --from claude-code-workspaces ccw
-```
+## Usage
 
-## First run
+`ccw` opens a table of your conversations. Nothing is written and no terminal opens until you ask.
 
-Type `ccw`. It reads what is already on your disk and opens a table of your conversations — nothing is written and no terminal opens until you ask for one.
+| Key | Does |
+|---|---|
+| `/` | search |
+| `o` / `f` | resume / fork the conversation |
+| `k` | keep it at the top of the list |
+| `a` | archive it out of the way |
+| `s` | save the running sessions as a named workspace |
+| `w` | your workspaces, where a whole set reopens |
+| `q` | quit |
 
-Move with the arrow keys, `/` to search, `q` to quit. The keys that do something to the row you are on are `o` to resume it, `f` to fork it, `k` to keep it at the top of the list, `a` to archive it out of the way, and `s` to save the sessions running right now as a named workspace. `w` opens those saved workspaces, and that is where you reopen a whole set. The full list is along the bottom of the screen, so there is nothing to memorise.
+Every key is listed along the bottom of the screen.
 
 ## What it does
 
-- **Every conversation, not just the live ones** — the list is built from `~/.claude/projects`, so it reaches sessions that finished, moved machine, or never ran under any session manager
-- **Workspaces** — name a set of sessions ("api-refactor") and open it whenever you want, across projects, into one tab layout
-- **Keep** — `k` sets a conversation aside with no typing; kept ones sit above the rest of the list until you come back to them
-- **Live status** — see which sessions are busy, idle, or *waiting on you*, taken from Claude Code's own `claude agents --json`
-- **Crash recovery** — `ccw restore` rebuilds what was open, from the last snapshot plus a modification-time heuristic, behind a checklist, with no daemon and no background service
-- **Windows Terminal native** — real tabs and split panes via `wt`, no WSL and no multiplexer in between
+- **Every conversation, not just the live ones**: the list comes from `~/.claude/projects`, not from a session manager.
+- **Workspaces**: a named set of sessions across projects ("api-refactor"), reopened into one tab layout.
+- **Live status**: busy, idle or *waiting on you*, from Claude Code's own `claude agents --json`.
+- **Crash recovery**: `ccw restore` rebuilds what was open from the last snapshot and file modification times, behind a checklist. No daemon, no background service.
+- **Native panes**: real Windows Terminal tabs and split panes, no WSL or multiplexer in between.
 
-## Why another one
+## When to use something else
 
-This is a crowded field, and the honest answer has three parts.
-
-### Claude Code already does a lot of this
-
-If you are on a current CLI, `claude agents` is a session browser that ships with the product, and much of the "list my past conversations" story is now native. `/resume` in the agent view opens a picker of past sessions and resumes your pick (2.1.212); the picker defaults to the current directory, with `Ctrl+A` to widen it to all projects (2.1.108). `/fork` copies a conversation into a new session of its own (2.1.212). Sessions can be pinned so they stay alive when idle (2.1.147). A `Notification` hook fires when a session needs input or finishes (2.1.198). And since 2.1.248 opening a session you already resumed in another terminal no longer starts a second process on that conversation — the same guard `ccw` implements as `RestorePlan.openable`.
-
-**So use the native picker for one session.** What it does not do is a *set*: its restore target is a background session in `claude agents`, not a pane in the terminal you are sitting in, and it opens one conversation at a time. `ccw` exists for the case where the unit is four conversations, in three directories, arranged in tabs.
+Claude Code now handles a single session well: `claude agents` browses them, `/resume` picks one and resumes it, `/fork` copies one. `ccw` is for a *set*: four conversations in three directories, reopened as panes in the terminal you are sitting in.
 
 ### The wider field
 
-Several good tools read the same transcript store, so "it reads what is on disk" no longer separates anything on its own:
+Several good tools read the same transcript store:
 
 | Project | What it is |
 |---|---|
-| [ccmanager](https://github.com/kbwo/ccmanager) (1.2k★) | A TUI that manages sessions across eight agent CLIs, without needing tmux |
-| [claude-squad](https://github.com/smtg-ai/claude-squad) (8.4k★) | Multiple agents in tmux, each in its own git worktree |
-| [claude-history](https://github.com/raine/claude-history) (469★) | Fuzzy search across your transcripts, then resume or fork the hit |
-| [claude-code-log](https://github.com/daaain/claude-code-log) (1.2k★) | Turns transcripts into readable HTML |
+| [ccmanager](https://github.com/kbwo/ccmanager) | A TUI that manages sessions across eight agent CLIs, without needing tmux |
+| [claude-squad](https://github.com/smtg-ai/claude-squad) | Multiple agents in tmux, each in its own git worktree |
+| [claude-history](https://github.com/raine/claude-history) | Fuzzy search across your transcripts, then resume or fork the hit |
+| [claude-code-log](https://github.com/daaain/claude-code-log) | Turns transcripts into readable HTML |
 | [wt-restore-claude-tabs](https://github.com/andrelsjunior/wt-restore-claude-tabs) | Rebuilds Windows Terminal tabs from the same transcripts after a crash, from one bash file under WSL. Tabs, not panes, chosen by a time window |
-| [herdr](https://github.com/herdrdev/herdr) (34k★) | An agent runtime: a background server holds the PTYs, so panes and the agents inside them outlive the client. Native Windows since v0.8.2 |
+| [herdr](https://github.com/herdrdev/herdr) | An agent runtime: a background server holds the PTYs, so panes and the agents inside them outlive the client |
 
-Star counts read 2026-09-01.
+herdr answers the crash case *better* than any restore tool, because it makes the loss rare instead of cheap. **If losing panes to a crash is your whole problem, install a runtime; this README will not pretend otherwise.**
 
-herdr deserves the specific mention, because it answers the crash case *better* than any restore tool does — it makes the loss rare instead of cheap. **If losing panes to a crash is your whole problem, install a runtime; this README will not pretend otherwise.** The difference that remains is what the two can see: a runtime knows the panes it started, while `ccw` reads every transcript on disk, which is why it can reach a conversation that no session manager was running for.
+### When to use something else
 
-### So when is `ccw` the wrong choice?
-
-- **You want one conversation back.** Use `/resume`, or `claude --resume <id>`. That is one keystroke against installing a tool.
-- **You want to search what was said inside conversations.** `ccw` filters on title, path, branch and first message. Use `claude-history`, or `wt-restore-claude-tabs --grep`.
-- **You want your panes never to die.** Use a runtime like herdr. Recovering afterwards is a worse answer than not losing it.
-- **You are on macOS or Linux and want panes reopened.** Browsing, searching, keeping, archiving and naming workspaces work there already; only the step that opens panes needs Windows Terminal. See below.
-- **You want worktrees, cost dashboards, or several agent CLIs in one view.** Those are `claude-squad` and `ccmanager`, and are deliberately out of scope here.
-
-What is left, and what this tool is actually for: **named, curated, cross-project sets of past conversations, restored into real Windows Terminal tabs and split panes.** Nothing above does the set.
+- **One conversation back**: `/resume`, or `claude --resume <id>`.
+- **To search inside conversations**: `ccw` filters only on title, path, branch and first message. Use claude-history, or `--grep` in wt-restore-claude-tabs.
+- **Panes that never die**: herdr. It knows only the panes it started, while `ccw` reads every transcript on disk.
+- **Worktrees, cost dashboards, or several agent CLIs in one view**: claude-squad and ccmanager.
+- **Panes on macOS or Linux**: not yet, see below.
 
 ## Platform support
 
-The core — reading sessions, live status, workspaces — is platform independent, because it builds on `claude agents --json` and `~/.claude/projects`, which are identical everywhere. Only *launching* panes is platform specific, and that lives behind a single `Launcher` interface. So on macOS and Linux `ccw` installs and runs, and everything up to opening a pane works: the list, search, keep and archive, and saving and editing workspaces. Pressing the key that opens one reports that Windows Terminal cannot be driven, and nothing else is affected.
+The core builds on `claude agents --json` and `~/.claude/projects`, which are the same everywhere. Only opening panes is platform specific, and it lives behind the `Launcher` interface: on macOS and Linux everything else works, and the open key says it needs Windows Terminal.
 
-Windows Terminal ships first because it is what the author runs and the only launcher this machine can honestly test. A tmux launcher is planned; contributions for other terminals are welcome.
+Windows Terminal came first because it is the one launcher the author can test. A tmux launcher is planned, and other terminals are welcome: see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Development
 
@@ -107,9 +98,9 @@ git clone https://github.com/volkanncicek/claude-code-workspaces
 uv tool install --editable ./claude-code-workspaces
 ```
 
-`--editable` means `ccw` is on `PATH` in every shell and still runs the working tree, so a change to the source takes effect without reinstalling. Adding a dependency needs `uv tool install --editable . --force` to refresh the tool's own environment; changing code does not.
+`ccw` then runs the working tree from any shell. After adding a dependency, run the install again with `--force`.
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md) has the setup, the checks CI runs, and the conventions worth knowing before a pull request. [`SECURITY.md`](SECURITY.md) covers what the tool reads and writes, and how to report a vulnerability. [`CHANGELOG.md`](CHANGELOG.md) records what changed per release.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) covers setup, checks and conventions, [`SECURITY.md`](SECURITY.md) what the tool reads and writes, and [`CHANGELOG.md`](CHANGELOG.md) each release.
 
 ## Not affiliated with Anthropic
 
