@@ -6,6 +6,7 @@
 import json
 import shutil
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -37,18 +38,28 @@ class _FakeTools:
         return {"wt": r"C:\wt.exe", "pwsh": r"C:\pwsh.exe", "claude": r"C:\claude.exe"}.get(name)
 
 
+class _OnWindows:
+    """`sys`, reporting Windows. Everything else is passed straight through."""
+
+    platform = "win32"
+
+    def __getattr__(self, attribute: str):
+        return getattr(sys, attribute)
+
+
 @pytest.fixture(autouse=True)
 def _no_real_panes(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Refuse to spawn a real terminal, and answer the launcher's tool lookup from a table, from every test, without being asked.
+    """Refuse to spawn a real terminal, and answer the launcher's tool lookup from a table on a platform pinned to Windows, from every test, without being asked.
 
     A safety rail rather than a convenience, and the only autouse fixture here. `subprocess.Popen` in `launcher` is the one call in the suite with an effect outside `tmp_path`: the argv is built before the fake home matters, so it opens Windows Terminal panes running `claude --resume` against the *real* `~/.claude`. A test that forgets to stub it does not fail — it silently starts conversations, which is exactly what one of these tests did while it was being written.
 
-    The `shutil.which` half is the same rail pointed the other way: `WindowsTerminalLauncher.build` resolves `wt`, `pwsh` and `claude` on the host `PATH`, so without a table a test that reaches the real launcher passes on a machine with Claude Code and Windows Terminal installed and fails everywhere else with an `UNAVAILABLE` outcome instead of the line it asserted. Measured 2026-09-02 — the first CI run failed `test_a_dry_run_opens_nothing` on both runners for exactly that reason, and the fake paths are what its assertions now stand on.
+    The `shutil.which` half is the same rail pointed the other way: `WindowsTerminalLauncher.build` resolves `wt`, `pwsh` and `claude` on the host `PATH`, so without a table a test that reaches the real launcher passes on a machine with Claude Code and Windows Terminal installed and fails everywhere else with an `UNAVAILABLE` outcome instead of the line it asserted. Measured 2026-09-02 — the first CI run failed `test_a_dry_run_opens_nothing` on both runners for exactly that reason, and the fake paths are what its assertions now stand on. The platform is the same rail again: off Windows `build` refuses before it looks anything up, so the table would never be consulted on the Ubuntu runner.
 
-    Only the launcher's own references are replaced, never `subprocess` or `shutil` themselves: `make_repo` and the live source spawn real processes on purpose, `subprocess.run` is built on `Popen`, and `live.py` does its own `which('claude')` that these tests answer separately. A test that means to inspect the argv, or to see a tool missing, stubs the attribute on the shim and its stub wins, because it is applied later.
+    Only the launcher's own references are replaced, never `subprocess`, `shutil` or `sys` themselves: `make_repo` and the live source spawn real processes on purpose, `subprocess.run` is built on `Popen`, and `live.py` does its own `which('claude')` that these tests answer separately. A test that means to inspect the argv, or to see a tool missing, stubs the attribute on the shim and its stub wins, because it is applied later.
     """
     monkeypatch.setattr(launcher, "subprocess", _RefusesToSpawn())
     monkeypatch.setattr(launcher, "shutil", _FakeTools())
+    monkeypatch.setattr(launcher, "sys", _OnWindows())
 
 
 @pytest.fixture
