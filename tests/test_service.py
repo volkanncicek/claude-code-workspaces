@@ -164,6 +164,22 @@ class TestBothSurfacesRestoreTheSameWay:
         assert opened == [{"window": launcher.CURRENT_WINDOW, "fork": True}]
         assert outcome.message.startswith("Forking")
 
+    def test_a_session_whose_directory_is_gone_is_refused_before_a_pane_opens(self, home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The pane would stop on `Set-Location` anyway; this says so before one opens."""
+        worktree = home / "code" / "app-feature"
+        worktree.mkdir(parents=True)
+        write_transcript(home, "s1", worktree, conversation("s1", worktree))
+        rows = sessions.history_rows()
+        worktree.rmdir()
+        opened: list[object] = []
+        monkeypatch.setattr(launcher.WindowsTerminalLauncher, "launch", lambda self, groups, **_: opened.append(groups))
+
+        outcome = service.resume_session(rows[0])
+
+        assert not outcome.ok
+        assert "directory" in outcome.message and str(worktree) in outcome.message
+        assert opened == []
+
     def test_a_session_that_is_running_is_refused_by_the_service_not_the_caller(self, home: Path, project: Path, set_live) -> None:
         write_transcript(home, "s1", project, conversation("s1", project))
         set_live(live_session("s1", project))
@@ -216,6 +232,19 @@ class TestBothSurfacesResolveANamedRestoreTheSameWay:
         assert [entry.session_id for entry in resolved.dead] == ["s1"]
         assert resolved.openable == ("s2",), "the rest of the set still opens"
         assert "1 session(s) in 'w'" in resolved.dead_note
+
+    def test_a_member_whose_directory_is_gone_is_reported_as_such(self, home: Path, project: Path, set_live) -> None:
+        worktree = home / "code" / "app-feature"
+        worktree.mkdir(parents=True)
+        write_transcript(home, "s3", worktree, conversation("s3", worktree))
+        workspaces.save(workspaces.from_live("v", [live_session("s3", worktree), live_session("s4", project)]))
+        worktree.rmdir()
+
+        resolved = service.plan_named_restore("v")
+
+        assert sorted(entry.session_id for entry in resolved.dead) == ["s3", "s4"]
+        assert "1 session(s) in 'v' no longer have a transcript." in resolved.dead_note
+        assert "1 session(s) in 'v' no longer have their working directory." in resolved.dead_note
 
     def test_it_refuses_when_it_cannot_tell_what_is_running(self, saved, set_live) -> None:
         """`restorable` reads `entry.live`; with no live ids every member looks free to open."""

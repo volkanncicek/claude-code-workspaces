@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- **A session whose working directory is gone says so before anything opens.** A removed worktree or a renamed project used to leave the session looking restorable, and the pane only stopped once it tried to change into the missing directory. The restore checklist now marks such a row "directory gone", leaves it unchecked and refuses to open it, the same way it treats a transcript that has gone; a named workspace restore reports those members instead of skipping them, the members dialog names their state, resuming one from the session list is refused with the path, and `ccw restore --json` carries a `cwdGone` flag per entry. The pane's own check stays in place for a directory that disappears after the plan was built.
+
 ### Fixed
 
 - **Panes open without PowerShell 7.** Restoring refused to run on a machine with only the Windows PowerShell 5.1 that ships with Windows, reporting `pwsh` as missing. Panes now run in PowerShell 7 when it is installed and fall back to Windows PowerShell otherwise.

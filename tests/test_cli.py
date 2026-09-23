@@ -276,6 +276,7 @@ def test_the_plan_json_carries_no_display_row(project) -> None:
     entry = json.loads(result.stdout)["entries"][0]
     assert "line" not in entry
     assert entry["label"] and entry["cwd"]
+    assert entry["cwdGone"] is False
 
 
 def test_an_empty_plan_exits_the_same_way_whether_or_not_it_is_piped(home: Path, set_live, monkeypatch: pytest.MonkeyPatch) -> None:
