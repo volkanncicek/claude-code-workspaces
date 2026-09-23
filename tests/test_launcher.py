@@ -167,6 +167,62 @@ def test_a_missing_tool_names_itself(monkeypatch: pytest.MonkeyPatch) -> None:
         WindowsTerminalLauncher().build({Path("C:/x"): [entry("s1", Path("C:/x"), Path("C:/x"))]})
 
 
+def test_pwsh_is_preferred_when_windows_powershell_is_there_as_well(monkeypatch: pytest.MonkeyPatch) -> None:
+    tools = {"wt": r"C:\wt.exe", "pwsh": r"C:\pwsh.exe", "powershell": r"C:\powershell.exe", "claude": r"C:\claude.exe"}
+    monkeypatch.setattr(launcher.shutil, "which", tools.get)
+    root = Path("C:/code/app")
+
+    argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root)]})
+
+    assert r"C:\pwsh.exe" in argv
+    assert r"C:\powershell.exe" not in argv
+
+
+def test_windows_powershell_runs_every_pane_when_pwsh_is_absent(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A user with only the Windows PowerShell 5.1 that ships with Windows was refused with "Not on PATH: pwsh." although nothing the pane script does needs PowerShell 7."""
+    tools = {"wt": r"C:\wt.exe", "powershell": r"C:\powershell.exe", "claude": r"C:\claude.exe"}
+    monkeypatch.setattr(launcher.shutil, "which", tools.get)
+    root = Path("C:/code/app")
+
+    argv = WindowsTerminalLauncher().build({root: [entry("s1", root, root), entry("s2", root, root), entry("s3", root, root)]})
+
+    assert argv.count(r"C:\powershell.exe") == 3
+    assert argv[-6:-1] == [r"C:\powershell.exe", "-NoExit", "-NoLogo", "-NoProfile", "-EncodedCommand"]
+
+
+def test_no_powershell_at_all_is_named_with_its_install_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.shutil, "which", lambda name: None if name in ("pwsh", "powershell") else "found")
+
+    with pytest.raises(launcher.LauncherUnavailable) as raised:
+        WindowsTerminalLauncher().build({Path("C:/x"): [entry("s1", Path("C:/x"), Path("C:/x"))]})
+
+    message = str(raised.value)
+    assert "PowerShell (`pwsh`)" in message
+    assert "winget install --id Microsoft.PowerShell --source winget" in message
+
+
+def test_a_missing_wt_is_named_as_windows_terminal_with_its_install_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.shutil, "which", lambda name: None if name == "wt" else "found")
+
+    with pytest.raises(launcher.LauncherUnavailable) as raised:
+        WindowsTerminalLauncher().build({Path("C:/x"): [entry("s1", Path("C:/x"), Path("C:/x"))]})
+
+    message = str(raised.value)
+    assert "Windows Terminal" in message
+    assert "winget install --id Microsoft.WindowsTerminal --source winget" in message
+
+
+def test_several_missing_tools_are_each_named_in_a_fixed_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.shutil, "which", lambda name: None)
+
+    with pytest.raises(launcher.LauncherUnavailable) as raised:
+        WindowsTerminalLauncher().build({Path("C:/x"): [entry("s1", Path("C:/x"), Path("C:/x"))]})
+
+    message = str(raised.value)
+    assert message.startswith("Not on PATH:")
+    assert message.index("Windows Terminal") < message.index("PowerShell (") < message.index("Claude Code")
+
+
 def test_the_spawn_environment_is_scrubbed_as_well(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CLAUDE_CODE_CHILD_SESSION", "1")
     monkeypatch.setenv("CLAUDE_EFFORT", "high")

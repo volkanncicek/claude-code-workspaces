@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- **Panes open without PowerShell 7.** Restoring refused to run on a machine with only the Windows PowerShell 5.1 that ships with Windows, reporting `pwsh` as missing. Panes now run in PowerShell 7 when it is installed and fall back to Windows PowerShell otherwise.
+- **A missing tool is named by what it is.** When Windows Terminal cannot be driven, the message now says Windows Terminal, PowerShell or Claude Code rather than a bare `wt`, `pwsh` or `claude`, with the `winget` line that installs the first two.
+
 ## [0.1.0] - 2026-09-02
 
 First public release.
