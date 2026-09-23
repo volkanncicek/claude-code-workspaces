@@ -2,6 +2,8 @@
 
 **A library for your Claude Code conversations: search them, keep them, group them into named workspaces, and open a whole set back into Windows Terminal tabs and split panes.**
 
+![The ccw session list in Windows Terminal: one row per conversation with its project, branch and when it was last seen, running sessions marked at the top](https://raw.githubusercontent.com/volkanncicek/claude-code-workspaces/main/docs/screenshot.png)
+
 Your Claude Code conversations pile up on disk — hundreds of them, keyed by UUID, spread across every project you have touched. `ccw` is the list you never had: search them, set one aside, name a set of them, and open that set back into real tabs and panes, each in the right directory, each resuming the right conversation.
 
 It reads what is on disk, so it reaches every conversation you have ever had — including the ones that started on another machine, in another terminal, or months ago.
