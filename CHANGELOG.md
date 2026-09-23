@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-23
+
 ### Changed
 
 - **A session whose working directory is gone says so before anything opens.** A removed worktree or a renamed project used to leave the session looking restorable, and the pane only stopped once it tried to change into the missing directory. The restore checklist now marks such a row "directory gone", leaves it unchecked and refuses to open it, the same way it treats a transcript that has gone; a named workspace restore reports those members instead of skipping them, the members dialog names their state, resuming one from the session list is refused with the path, and `ccw restore --json` carries a `cwdGone` flag per entry. The pane's own check stays in place for a directory that disappears after the plan was built.
@@ -35,5 +37,6 @@ First public release.
 - Spawned panes have the `CLAUDE_*` nested-session markers scrubbed and `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1` set. Without that a restored session writes no transcript and never registers with `claude agents`.
 - Requires Python 3.13 or later.
 
-[Unreleased]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/volkanncicek/claude-code-workspaces/releases/tag/v0.1.0
