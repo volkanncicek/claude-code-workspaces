@@ -16,10 +16,16 @@ ccw restore    # rebuild what was open before a crash or a reboot
 
 ## Before you install
 
-- **Windows 10 or 11, with Windows Terminal.** Only the opening of panes is Windows-only, and [Platform support](#platform-support) explains why that is the one part that is.
-- **Nothing extra for PowerShell.** Every pane runs in PowerShell 7 (`pwsh`) when it is installed, and in the Windows PowerShell that ships with Windows otherwise.
+Everything except opening panes works on Windows, macOS and Linux:
+
 - **Python 3.13 or later.**
 - **Claude Code**, recent enough for `claude agents --json`, which arrived in 2.1.145. The tool also needs the `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE` environment variable; that one is documented in Claude Code's environment-variable reference, but no release note says which version introduced it, so no minimum is claimed here. If your build is too old the symptom is specific: restored sessions do not show up in `claude agents` and write no transcript. If you see that, update Claude Code.
+
+Opening panes needs one supported terminal:
+
+- **Windows Terminal** on Windows 10 or 11, with PowerShell 7 or Windows PowerShell 5.1. Either shell works, so nothing extra to install: panes run in `pwsh` when it is installed and in the `powershell` that ships with Windows otherwise.
+
+[Platform support](#platform-support) says why only this step depends on the platform.
 
 ## Install
 
