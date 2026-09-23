@@ -92,7 +92,7 @@ def test_a_quote_in_a_path_cannot_break_out_of_the_script() -> None:
 
     script = payloads(WindowsTerminalLauncher().build({root: [entry("s1", root, root)]}))[0]
 
-    assert "Set-Location -LiteralPath 'C:\\code\\o''brien'" in script
+    assert next(line for line in script.splitlines() if line.startswith("Set-Location")) == "Set-Location -LiteralPath 'C:\\code\\o''brien' -ErrorAction Stop"
 
 
 def test_each_pane_starts_in_its_own_working_directory() -> None:
@@ -104,8 +104,8 @@ def test_each_pane_starts_in_its_own_working_directory() -> None:
     argv = WindowsTerminalLauncher().build(groups)
 
     scripts = payloads(argv)
-    assert f"Set-Location -LiteralPath '{root}'" in scripts[0]
-    assert f"Set-Location -LiteralPath '{nested}'" in scripts[1]
+    assert next(line for line in scripts[0].splitlines() if line.startswith("Set-Location")) == f"Set-Location -LiteralPath '{root}' -ErrorAction Stop"
+    assert next(line for line in scripts[1].splitlines() if line.startswith("Set-Location")) == f"Set-Location -LiteralPath '{nested}' -ErrorAction Stop"
     assert "-d" not in argv
 
 
@@ -147,7 +147,7 @@ def test_a_semicolon_in_a_path_cannot_split_the_command_line() -> None:
     # One pane needs no separator, so any `;` at all here would be an accidental one.
     assert not any(";" in token for token in argv), f"unquotable separator reached the argv: {[token for token in argv if ';' in token]}"
     # The real path still reaches the pane, escaped by the script rather than by the argv.
-    assert f"Set-Location -LiteralPath '{root}'" in payloads(argv)[0]
+    assert next(line for line in payloads(argv)[0].splitlines() if line.startswith("Set-Location")) == f"Set-Location -LiteralPath '{root}' -ErrorAction Stop"
 
 
 def test_an_empty_plan_opens_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
