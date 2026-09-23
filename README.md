@@ -81,14 +81,14 @@ herdr deserves the specific mention, because it answers the crash case *better* 
 - **You want one conversation back.** Use `/resume`, or `claude --resume <id>`. That is one keystroke against installing a tool.
 - **You want to search what was said inside conversations.** `ccw` filters on title, path, branch and first message. Use `claude-history`, or `wt-restore-claude-tabs --grep`.
 - **You want your panes never to die.** Use a runtime like herdr. Recovering afterwards is a worse answer than not losing it.
-- **You are on macOS or Linux.** Only the Windows Terminal launcher is written; see below.
+- **You are on macOS or Linux and want panes reopened.** Browsing, searching, keeping, archiving and naming workspaces work there already; only the step that opens panes needs Windows Terminal. See below.
 - **You want worktrees, cost dashboards, or several agent CLIs in one view.** Those are `claude-squad` and `ccmanager`, and are deliberately out of scope here.
 
 What is left, and what this tool is actually for: **named, curated, cross-project sets of past conversations, restored into real Windows Terminal tabs and split panes.** Nothing above does the set.
 
 ## Platform support
 
-The core — reading sessions, live status, workspaces — is platform independent, because it builds on `claude agents --json` and `~/.claude/projects`, which are identical everywhere. Only *launching* panes is platform specific, and that lives behind a single `Launcher` interface.
+The core — reading sessions, live status, workspaces — is platform independent, because it builds on `claude agents --json` and `~/.claude/projects`, which are identical everywhere. Only *launching* panes is platform specific, and that lives behind a single `Launcher` interface. So on macOS and Linux `ccw` installs and runs, and everything up to opening a pane works: the list, search, keep and archive, and saving and editing workspaces. Pressing the key that opens one reports that Windows Terminal cannot be driven, and nothing else is affected.
 
 Windows Terminal ships first because it is what the author runs and the only launcher this machine can honestly test. A tmux launcher is planned; contributions for other terminals are welcome.
 
