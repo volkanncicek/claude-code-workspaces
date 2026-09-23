@@ -7,6 +7,7 @@ import base64
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -78,6 +79,9 @@ class WindowsTerminalLauncher:
     name = "Windows Terminal"
 
     def build(self, groups: dict[Path, list[RestoreEntry]], *, fork: bool = False, window: Window = NEW_WINDOW) -> list[str]:
+        # Off Windows a missing `wt` is not something to install, so neither the per-tool list nor its `winget` lines apply.
+        if sys.platform != "win32":
+            raise LauncherUnavailable("opening panes currently needs Windows Terminal on Windows.")
         terminal = shutil.which("wt")
         # Windows PowerShell 5.1 ships with every Windows, so requiring pwsh refused users who had a working shell. The fallback fires only when pwsh is absent, so no PowerShell 7 module path sits in the inherited `PSModulePath`, which is what breaks 5.1 launched from a pwsh parent. Measured 2026-09-23 with Windows PowerShell 5.1.26100 and `-NoProfile`: the pane script's `CLAUDE_*` scrub leaves only `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE`, and `Set-Location -ErrorAction Stop` reaches the `claude` call for an existing directory and terminates before it for a missing one.
         shell = shutil.which("pwsh") or shutil.which("powershell")

@@ -223,6 +223,20 @@ def test_several_missing_tools_are_each_named_in_a_fixed_order(monkeypatch: pyte
     assert message.index("Windows Terminal") < message.index("PowerShell (") < message.index("Claude Code")
 
 
+@pytest.mark.parametrize("platform", ["darwin", "linux"])
+def test_off_windows_the_message_says_windows_rather_than_what_to_install(monkeypatch: pytest.MonkeyPatch, platform: str) -> None:
+    """A Mac or Linux user was told to run `winget`, which does not exist there: a missing `wt` off Windows is not something to install."""
+    monkeypatch.setattr(launcher.sys, "platform", platform)
+
+    with pytest.raises(launcher.LauncherUnavailable) as raised:
+        WindowsTerminalLauncher().build({Path("/x"): [entry("s1", Path("/x"), Path("/x"))]})
+
+    message = str(raised.value)
+    assert "Windows Terminal on Windows" in message
+    assert "winget" not in message
+    assert "Not on PATH" not in message
+
+
 def test_the_spawn_environment_is_scrubbed_as_well(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CLAUDE_CODE_CHILD_SESSION", "1")
     monkeypatch.setenv("CLAUDE_EFFORT", "high")
