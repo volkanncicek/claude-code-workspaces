@@ -17,7 +17,7 @@ jobs:
 
       - name: Install uv
         # setup-uv stopped publishing a moving major tag after v1, so this is the exact release. Dependabot bumps it.
-        uses: astral-sh/setup-uv@v10.0.1
+        uses: astral-sh/setup-uv@v10.1.0
 
       - name: Install dependencies
         # `--locked` fails instead of silently re-resolving, so a dependency change committed without its lockfile update cannot pass green. No `--all-extras` (no optional dependencies are declared) and no `--dev` (installing the dev group is the default); both read as load-bearing when they do nothing.
