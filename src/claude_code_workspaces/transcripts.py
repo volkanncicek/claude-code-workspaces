@@ -67,7 +67,7 @@ def transcript_path(session_id: str) -> Path | None:
 
 
 def transcript_paths() -> list[Path] | None:
-    """Every session transcript, or `None` when the directory itself could not be read. `None` is not `[]`: a caller that prunes by absence has to be able to tell "nothing is there" from "I could not look"."""
+    """Every session transcript, or `None` when the directory itself could not be read. `None` is not `[]`: a caller that prunes by absence has to be able to tell "nothing is there" from "I could not look". The glob is one level deep on purpose: deeper sits `<project>/<session>/subagents/agent-*.jsonl`, sub-agent runs rather than sessions, and a recursive glob inflated the list about 3.5x when measured on 2026-09-01."""
     try:
         return sorted(claude_projects().glob("*/*.jsonl"))
     except OSError as exc:
