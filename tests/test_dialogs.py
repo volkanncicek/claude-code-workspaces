@@ -364,6 +364,15 @@ class TestWorkspacePickerWithNothingSaved:
 
             assert answers == [], "there is no row to act on, and an action on nothing would crash the caller"
 
+    async def test_the_footer_dims_the_keys_that_have_nothing_to_act_on(self) -> None:
+        """Shown and inert reads as broken; dimmed says the key exists and why it does nothing now."""
+        screen = WorkspacePicker([])
+        async with opened(screen) as (_app, _pilot, _answers):
+            bindings = screen.active_bindings
+
+            assert [key for key in ("o", "f", "e", "r", "d") if bindings[key].enabled] == []
+            assert bindings["escape"].enabled
+
     async def test_it_says_how_to_make_one(self) -> None:
         screen = WorkspacePicker([])
         async with opened(screen) as (_app, _pilot, _answers):
@@ -435,6 +444,8 @@ class TestWorkspaceMembersReturnsAnEditRatherThanPerformingOne:
         screen = WorkspaceMembers("w", [])
         async with opened(screen) as (_app, pilot, answers):
             assert "Press a" in str(screen.query_one("#empty", Label).render())
+            assert not screen.active_bindings["x"].enabled, "Drop is dimmed in the footer rather than shown and inert"
+            assert screen.active_bindings["a"].enabled
             await pilot.press("x")
             await settle(pilot)
             assert answers == [], "there is nothing to drop"

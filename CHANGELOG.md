@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - **A session you renamed shows the name you gave it.** A name set with `/rename` now labels the session in the list and in the restore checklist, ahead of an agent name and the generated title, and search matches it. Claude Code writes that name near the end of the transcript, which `ccw` never read before, so it now also reads the last 64 KB of each changed transcript. The first launch after upgrading rescans every transcript once.
 
+### Fixed
+
+- **A key with nothing to act on is dimmed instead of shown and inert.** With no workspaces saved, the Workspaces dialog listed Restore, Refresh, Edit members, Rename and Delete in its footer although none of them could do anything; an empty member list did the same with Drop. Those keys are now greyed out until there is something to act on.
+
 ## [0.1.1] - 2026-09-23
 
 ### Changed

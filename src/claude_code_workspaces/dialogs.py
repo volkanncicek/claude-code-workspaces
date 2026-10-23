@@ -196,9 +196,13 @@ class WorkspacePicker(Dialog[tuple[WorkspaceAction, str] | None]):
         for workspace in self.found:
             table.add_row(workspace.name[:34], str(len(workspace.members)), age(workspace.updated), key=workspace.name)
 
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        # `None` dims the key in the footer and stops it running: with nothing listed, every key but Close would otherwise be shown and silently do nothing.
+        if action in ("open", "refresh", "members", "rename", "delete") and not self.found:
+            return None
+        return True
+
     def _choose(self, action: WorkspaceAction) -> None:
-        if not self.found:
-            return
         table = self.query_one(DataTable)
         if table.is_valid_row_index(table.cursor_row):
             self.dismiss((action, self.found[table.cursor_row].name))
@@ -280,9 +284,13 @@ class WorkspaceMembers(Dialog[tuple[MemberAction, list[str]] | None]):
     def action_add(self) -> None:
         self._dismiss_with("add", [])
 
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        # Add stays live on an empty set, since the empty state tells the user to press it; Drop is dimmed rather than shown and inert.
+        if action == "drop" and not self.entries:
+            return None
+        return True
+
     def action_drop(self) -> None:
-        if not self.entries:
-            return
         table = self.query_one(DataTable)
         if table.is_valid_row_index(table.cursor_row):
             self._dismiss_with("drop", [self.entries[table.cursor_row].session_id])
