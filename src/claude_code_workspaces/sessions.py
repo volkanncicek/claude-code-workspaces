@@ -29,6 +29,7 @@ class SessionRow:
     branch: str | None
     first_prompt: str | None
     kept: bool = False  # Set aside by the user. Defaulted so existing constructions are untouched.
+    custom_title: str | None = None  # The name set with `/rename`. Defaulted for the same reason.
     _haystack: str | None = field(default=None, repr=False, compare=False)
 
     @property
@@ -41,7 +42,7 @@ class SessionRow:
 
     @property
     def label(self) -> str:
-        return session_label(agent_name=self.agent_name, cwd=self.cwd, title=self.title, session_id=self.session_id)
+        return session_label(custom_title=self.custom_title, agent_name=self.agent_name, cwd=self.cwd, title=self.title, session_id=self.session_id)
 
     def adopt(self, session: LiveSession | None) -> None:
         """Fold a live reading, or its absence, into this row.
@@ -61,7 +62,7 @@ class SessionRow:
     def haystack(self) -> str:
         """Search blob, cached. Cleared when `merge_live` updates `agent_name`."""
         if self._haystack is None:
-            parts = [self.session_id, self.title or "", self.agent_name or "", str(self.cwd), self.branch or "", self.first_prompt or ""]
+            parts = [self.session_id, self.custom_title or "", self.title or "", self.agent_name or "", str(self.cwd), self.branch or "", self.first_prompt or ""]
             self._haystack = " ".join(parts).casefold()
         return self._haystack
 
@@ -138,6 +139,7 @@ def _from_live(session: LiveSession, archived: set[str], shelved: set[str]) -> S
         transcript=path,
         branch=history.branch if history else None,
         first_prompt=history.first_prompt if history else None,
+        custom_title=history.custom_title if history else None,
     )
 
 
@@ -157,6 +159,7 @@ def _from_history(history: HistoricalSession, archived: set[str], shelved: set[s
         transcript=history.transcript,
         branch=history.branch,
         first_prompt=history.first_prompt,
+        custom_title=history.custom_title,
     )
 
 

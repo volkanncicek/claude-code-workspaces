@@ -45,6 +45,7 @@ class RestoreEntry:
     live: bool = False
     # Stat-ed once while the plan is built, so the checklist can say so before a pane opens. It is advance notice, not the guard: the directory can still vanish before launch, and the pane script's own `Set-Location` check is what stops a resume in the wrong place.
     cwd_gone: bool = False
+    custom_title: str | None = None  # The name set with `/rename`. Defaulted so existing constructions are untouched.
 
     @property
     def missing(self) -> bool:
@@ -57,7 +58,7 @@ class RestoreEntry:
 
     @property
     def label(self) -> str:
-        return session_label(agent_name=self.agent_name, cwd=self.cwd, title=self.title, session_id=self.session_id)
+        return session_label(custom_title=self.custom_title, agent_name=self.agent_name, cwd=self.cwd, title=self.title, session_id=self.session_id)
 
 
 @dataclass(slots=True)
@@ -185,6 +186,7 @@ def _materialise(plan: RestorePlan, candidates: dict[str, _Candidate], live_ids:
                 transcript=path,
                 live=session_id in live_ids,
                 cwd_gone=not cwd.is_dir(),
+                custom_title=scanned.custom_title if scanned else None,
             )
         )
 

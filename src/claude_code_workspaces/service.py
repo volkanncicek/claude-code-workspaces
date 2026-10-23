@@ -298,6 +298,7 @@ def resume_session(row: SessionRow, *, fork: bool = False) -> Outcome:
         # The row's sources, not `row.label` — `agent_name` holds a raw handle, and a resolved label put there would be resolved twice.
         agent_name=row.agent_name,
         title=row.title,
+        custom_title=row.custom_title,
         source="direct",
         last_active=row.last_active,
         trust=trust_for(row.cwd, trusted_roots()),

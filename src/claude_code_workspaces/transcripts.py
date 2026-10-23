@@ -27,11 +27,14 @@ class HistoricalSession:
     title: str | None = None
     first_prompt: str | None = None
     branch: str | None = None
+    custom_title: str | None = None  # The name set with `/rename`, as opposed to the generated `title`.
 
 
 HEAD_RECORDS = 200
+# Claude Code re-appends the `/rename` record as the session goes on, so the latest one stays near the end of the file however far back the rename happened. The Agent SDK's own `list_sessions` reads the same 64 KB tail for the same field.
+TAIL_BYTES = 65536
 # Bump when the cached entry shape changes. A mismatch throws the file away rather than reading keys that no longer mean what they did.
-HEADS_CACHE_VERSION = 3
+HEADS_CACHE_VERSION = 4
 _MAX_ERRORS = 50
 
 _ERRORS: list[str] = []
@@ -146,10 +149,33 @@ def scan(path: Path, *, head: int = HEAD_RECORDS) -> HistoricalSession | None:
                     break
     except OSError as exc:
         _note(path, exc)
+    session.custom_title = _last_rename(path, session.size)
     if session.branch == "HEAD":
         # Claude's placeholder for a detached head, not a branch name. Normalised here so nothing downstream has to know the placeholder exists.
         session.branch = None
     return session
+
+
+def _last_rename(path: Path, size: int) -> str | None:
+    """The latest `custom-title` in the file's last `TAIL_BYTES`. The window usually opens inside a record; that fragment is not JSON and is skipped like any unreadable line."""
+    try:
+        with path.open("rb") as handle:
+            handle.seek(max(0, size - TAIL_BYTES))
+            tail = handle.read(TAIL_BYTES)
+    except OSError as exc:
+        _note(path, exc)
+        return None
+    for line in reversed(tail.splitlines()):
+        # Substring first: nearly every line in the window is something else, and parsing all of them would cost more than the read.
+        if b'"custom-title"' not in line:
+            continue
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(record, dict) and record.get("type") == "custom-title" and (name := _display(record.get("customTitle"))):
+            return name
+    return None
 
 
 def _absorb(session: HistoricalSession, record: dict) -> None:
@@ -198,6 +224,7 @@ def _restored(session_id: str, path: Path, modified: datetime, size: int, rememb
         title=_display(entry.get("title")),
         first_prompt=_display(entry.get("firstPrompt")),
         branch=_display(entry.get("branch")),
+        custom_title=_display(entry.get("customTitle")),
     )
 
 
@@ -246,6 +273,7 @@ def historical_sessions() -> list[HistoricalSession]:
                 "title": session.title,
                 "firstPrompt": session.first_prompt,
                 "branch": session.branch,
+                "customTitle": session.custom_title,
             }
         sessions.append(session)
     _LAST_PASS["complete"] = not skipped
