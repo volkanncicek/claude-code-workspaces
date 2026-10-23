@@ -46,12 +46,12 @@ Most mistakes in this codebase announce themselves: a test fails, or ruff or ty 
 - **`transcripts.py` — this is the only module allowed to parse the JSONL transcripts.** The format is internal and changes between Claude Code releases. When it breaks, parsing must degrade to live data from `claude agents --json` and the tool must keep working, so nothing in there may raise.
 - **`paths.py` — Claude Code's own data is read-only.** `~/.claude.json` and `~/.claude/projects/` are read, never written, moved or deleted. Everything `ccw` writes lives under `~/.ccw/`, and destructive actions on those files move to `~/.ccw/trash/` after a confirmation.
 
-`CLAUDE.md` in the repository root states the same four for anyone working with an AI agent here.
+`AGENTS.md` in the repository root states the same four for anyone working with an AI agent here.
 
 Two smaller preferences, since a reviewer would otherwise raise them: prefer `claude agents --json` to anything derived from files, because it is the only supported interface for live session state; and no stub commands or placeholder scaffolding, a command exists once it does something.
 
 ## Opening a pull request
 
-One change per pull request, and a description of what it does rather than which files it touches. Run the four checks locally first — a red CI run is usually the thing that stalls a review longest. If the change is user-visible, add a line under `## [Unreleased]` in `CHANGELOG.md`.
+One change per pull request, and a description of what it does rather than which files it touches. Run the four checks locally first — a red CI run is usually the thing that stalls a review longest. If the change is user-visible, add a line under `## [Unreleased]` in `CHANGELOG.md`. `main` accepts only squash merges of a branch that is up to date with it, so when several pull requests are open at once, each one after the first needs a rebase onto `main` once the one before it lands.
 
 Expect review comments; getting them is normal and not a verdict on the work.
