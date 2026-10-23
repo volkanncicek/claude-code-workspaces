@@ -14,5 +14,10 @@ wheels/
 # Local, never committed
 *.local.md
 
+# The maintainer's codegraph index and its Claude Code wiring; contributors do not run codegraph.
+.codegraph/
+.claude/
+.mcp.json
+
 # Local helper scripts kept next to the working notes, not part of the package.
 docs/*.py
