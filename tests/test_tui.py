@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from textual import events
+from textual.binding import Binding
 from textual.widgets import DataTable, Footer, Input, Label, Static
 
 from claude_code_workspaces import keep, launcher, live, restore, service, sessions, snapshot, tui, workspaces
@@ -1266,7 +1267,7 @@ class TestEveryActionIsOnScreen:
         async with app.run_test(size=(118, 20)) as pilot:
             await ready(app, pilot)
             # Textual's own bindings (ctrl+c and friends) are not ours to show; these are the ones this app declares.
-            declared = {binding.key for binding in SessionList.BINDINGS}
+            declared = {binding.key for binding in Binding.make_bindings(SessionList.BINDINGS)}
             hidden = [binding.description for key, binding in app._bindings if key in declared and not binding.show and binding.description]
 
             assert hidden == ["Clear search"], f"an action nobody can see: {hidden}"
@@ -1317,7 +1318,7 @@ class TestASavedSetCanBeMaintainedFromTheList:
     """Refresh, add and remove are required affordances rather than optional ones, because a fixed list ossifies without them. Add, remove and rename existed only as subcommands, so half of that was true on one surface."""
 
     async def test_the_picker_offers_every_way_to_maintain_a_set(self, world) -> None:
-        offered = {binding.description for binding in WorkspacePicker.BINDINGS}
+        offered = {binding.description for binding in Binding.make_bindings(WorkspacePicker.BINDINGS)}
 
         assert {"Restore", "Refresh from live", "Edit members", "Rename", "Delete"} <= offered
 
