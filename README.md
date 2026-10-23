@@ -1,5 +1,7 @@
 # claude-code-workspaces
 
+[![PyPI](https://img.shields.io/pypi/v/claude-code-workspaces)](https://pypi.org/project/claude-code-workspaces/) [![CI](https://github.com/volkanncicek/claude-code-workspaces/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/volkanncicek/claude-code-workspaces/actions/workflows/ci.yml)
+
 **Search your Claude Code conversations, keep the ones that matter, group them into named workspaces, and reopen a whole set as Windows Terminal tabs and split panes.**
 
 ![The ccw session list in Windows Terminal: one row per conversation with its project, branch and when it was last seen, running sessions marked at the top](https://raw.githubusercontent.com/volkanncicek/claude-code-workspaces/main/docs/screenshot.png)
