@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-23
+
 ### Changed
 
 - **A session you renamed shows the name you gave it.** A name set with `/rename` now labels the session in the list and in the restore checklist, ahead of an agent name and the generated title, and search matches it. Claude Code writes that name near the end of the transcript, which `ccw` never read before, so it now also reads the last 64 KB of each changed transcript. The first launch after upgrading rescans every transcript once.
@@ -41,6 +43,7 @@ First public release.
 - Spawned panes have the `CLAUDE_*` nested-session markers scrubbed and `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1` set. Without that a restored session writes no transcript and never registers with `claude agents`.
 - Requires Python 3.13 or later.
 
-[Unreleased]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/volkanncicek/claude-code-workspaces/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/volkanncicek/claude-code-workspaces/releases/tag/v0.1.0
