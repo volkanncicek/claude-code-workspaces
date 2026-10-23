@@ -44,5 +44,5 @@ def roots_cache() -> Path:
 
 
 def heads_cache() -> Path:
-    """Parsed transcript heads. Holds conversation excerpts — the AI-generated title and the user's first message for every session — so `~/.ccw/` is not free of conversation content even though nothing under `~/.claude/` is touched."""
+    """Parsed transcript heads. Holds conversation excerpts — the AI-generated title, any `/rename` name and the user's first message for every session — so `~/.ccw/` is not free of conversation content even though nothing under `~/.claude/` is touched."""
     return ccw_home() / "heads.json"

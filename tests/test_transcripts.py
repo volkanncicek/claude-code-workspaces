@@ -313,3 +313,64 @@ def test_a_title_of_nothing_but_control_characters_is_no_title(home: Path) -> No
     session = transcripts.scan(path)
 
     assert session is not None and session.title is None
+
+
+def _filler(session_id: str, cwd: Path, count: int) -> list[dict]:
+    return [{"sessionId": session_id, "cwd": str(cwd), "type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": f"step {index}"}]}} for index in range(count)]
+
+
+def _renamed(session_id: str, title: str) -> dict:
+    return {"type": "custom-title", "customTitle": title, "sessionId": session_id}
+
+
+def test_a_rename_far_past_the_head_is_read_from_the_tail(home: Path) -> None:
+    """`/rename` appends its record wherever the conversation is, almost always past the records the head scan reads."""
+    cwd = home / "code" / "app"
+    records = [*conversation("s1", cwd), *_filler("s1", cwd, transcripts.HEAD_RECORDS * 2), _renamed("s1", "release-tracking")]
+    path = write_transcript(home, "s1", cwd, records)
+
+    session = transcripts.scan(path)
+
+    assert session is not None and session.custom_title == "release-tracking"
+
+
+def test_the_last_rename_wins(home: Path) -> None:
+    cwd = home / "code" / "app"
+    records = [*conversation("s1", cwd), _renamed("s1", "first-name"), *_filler("s1", cwd, 5), _renamed("s1", "second-name")]
+    path = write_transcript(home, "s1", cwd, records)
+
+    session = transcripts.scan(path)
+
+    assert session is not None and session.custom_title == "second-name"
+
+
+def test_a_tail_window_opening_mid_record_still_finds_the_rename(home: Path) -> None:
+    """In any file larger than the window, the window opens inside some record. That fragment is not JSON and has to be skipped like any other unreadable line, not end the read."""
+    cwd = home / "code" / "app"
+    long_answer = {"sessionId": "s1", "type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "x" * transcripts.TAIL_BYTES}]}}
+    records = [*conversation("s1", cwd), long_answer, _renamed("s1", "release-tracking")]
+    path = write_transcript(home, "s1", cwd, records)
+
+    session = transcripts.scan(path)
+
+    assert session is not None and session.custom_title == "release-tracking"
+
+
+def test_a_session_never_renamed_has_no_custom_title(home: Path) -> None:
+    cwd = home / "code" / "app"
+    path = write_transcript(home, "s1", cwd, conversation("s1", cwd))
+
+    session = transcripts.scan(path)
+
+    assert session is not None and session.custom_title is None
+
+
+def test_a_rename_survives_the_heads_cache(home: Path) -> None:
+    """The second pass is served from `heads.json` without opening the transcript, so a field the cache does not carry would vanish on every run after the first."""
+    cwd = home / "code" / "app"
+    write_transcript(home, "s1", cwd, [*conversation("s1", cwd), _renamed("s1", "release-tracking")])
+    transcripts.historical_sessions()
+
+    sessions = transcripts.historical_sessions()
+
+    assert [session.custom_title for session in sessions] == ["release-tracking"]

@@ -1,6 +1,6 @@
 """One session must read the same in the session list and in a restore plan.
 
-The two surfaces resolve a display label from the same three inputs (hand-chosen agent name, transcript title, session id) and they used to do it with two separate implementations. This pins every branch of that policy across both, so a change to one that does not reach the other fails here rather than in the UI.
+The two surfaces resolve a display label from the same four inputs (a `/rename`, hand-chosen agent name, transcript title, session id) and they used to do it with two separate implementations. This pins every branch of that policy across both, so a change to one that does not reach the other fails here rather than in the UI.
 """
 
 from pathlib import Path
@@ -24,9 +24,12 @@ class Case(NamedTuple):
     agent_name: str | None
     title: str | None
     expected: str
+    renamed: str | None = None
 
 
 CASES = [
+    pytest.param(Case(HAND_CHOSEN, "Login bug", "auth-release", renamed="auth-release"), id="a /rename wins over a hand-chosen name"),
+    pytest.param(Case(GENERATED, "Login bug", "auth-release", renamed="auth-release"), id="a /rename wins over the title"),
     pytest.param(Case(HAND_CHOSEN, "Login bug", HAND_CHOSEN), id="hand-chosen name wins over the title"),
     pytest.param(Case(GENERATED, "Login bug", "Login bug"), id="a generated name loses to the title"),
     pytest.param(Case(GENERATED, None, GENERATED), id="a generated name is better than nothing"),
@@ -44,7 +47,10 @@ def project(home: Path) -> Path:
 
 @pytest.mark.parametrize("case", CASES)
 def test_both_surfaces_agree_on_the_label(project: Path, home: Path, set_live, case: Case) -> None:
-    write_transcript(home, SESSION_ID, project, conversation(SESSION_ID, project, title=case.title))
+    records = conversation(SESSION_ID, project, title=case.title)
+    if case.renamed:
+        records.append({"type": "custom-title", "customTitle": case.renamed, "sessionId": SESSION_ID})
+    write_transcript(home, SESSION_ID, project, records)
     running = live_session(SESSION_ID, project, name=case.agent_name)
     set_live(running)
     # The plan reads the name from a snapshot, which is where a crashed session's name survives.

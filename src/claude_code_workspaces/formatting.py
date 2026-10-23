@@ -16,11 +16,13 @@ def is_generated_name(name: str | None, cwd: Path) -> bool:
     return re.fullmatch(rf"{re.escape(slug)}-[0-9a-f]{{2}}", name) is not None
 
 
-def session_label(*, agent_name: str | None, cwd: Path, title: str | None, session_id: str) -> str:
-    """The one label policy: a hand-chosen agent name, else the transcript title, else the generated handle, else a short id.
+def session_label(*, custom_title: str | None, agent_name: str | None, cwd: Path, title: str | None, session_id: str) -> str:
+    """The one label policy: a `/rename`, else a hand-chosen agent name, else the transcript title, else the generated handle, else a short id.
 
     Both surfaces call this, so a session reads the same in the list and in a restore plan. `tests/test_labels.py` pins that agreement.
     """
+    if custom_title:
+        return custom_title
     if agent_name and not is_generated_name(agent_name, cwd):
         return agent_name
     return title or agent_name or session_id[:8]
