@@ -18,14 +18,16 @@ Add dependencies with `uv add <package>` rather than editing pins by hand, so `u
 
 ## Running the checks
 
-CI runs exactly these four, on Windows and on Ubuntu:
+CI runs exactly these, on Windows and on Ubuntu, on every Python from 3.13 to the newest release:
 
 ```shell
-uv run ruff check .
-uv run ruff format --check .
+uv run prek run --all-files   # ruff, secrets, workflows, markdown
 uv run ty check
+uv run pyright
 uv run pytest
 ```
+
+`uv run prek install` once makes the first of them run on every commit.
 
 The suite takes a few minutes. It needs `git` on `PATH`, and that is all — you do not need Claude Code installed. The home directory is redirected to a temporary one, live session data is faked, and an autouse fixture refuses to let anything spawn a real terminal pane and answers the launcher's `wt` / `pwsh` / `claude` lookup from a table rather than from your `PATH`, so running the tests cannot touch your own sessions and cannot pass or fail on what you happen to have installed.
 
@@ -52,6 +54,6 @@ Two smaller preferences, since a reviewer would otherwise raise them: prefer `cl
 
 ## Opening a pull request
 
-One change per pull request, and a description of what it does rather than which files it touches. Run the four checks locally first — a red CI run is usually the thing that stalls a review longest. If the change is user-visible, add a line under `## [Unreleased]` in `CHANGELOG.md`. `main` accepts only squash merges of a branch that is up to date with it, so when several pull requests are open at once, each one after the first needs a rebase onto `main` once the one before it lands.
+One change per pull request, and a description of what it does rather than which files it touches. Run the checks locally first — a red CI run is usually the thing that stalls a review longest. If the change is user-visible, add a line under `## [Unreleased]` in `CHANGELOG.md`. `main` accepts only squash merges of a branch that is up to date with it, so when several pull requests are open at once, each one after the first needs a rebase onto `main` once the one before it lands.
 
 Expect review comments; getting them is normal and not a verdict on the work.

@@ -22,7 +22,7 @@ These four silently corrupt behaviour rather than failing loudly. Each is also s
 uv run ccw                # run from source
 uv run ccw --help
 uv add <package>          # never hand-edit dependency pins
-uv run ruff check . ; uv run ruff format --check . ; uv run ty check ; uv run pytest   # the four CI checks
+uv run prek run --all-files ; uv run ty check ; uv run pyright ; uv run pytest   # the CI checks
 ```
 
 ## Conventions
