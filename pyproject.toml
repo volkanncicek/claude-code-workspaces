@@ -64,6 +64,10 @@ extend-immutable-calls = ["typer.Argument", "typer.Option"]
 # Test helpers are built for readability at the call site: keyword-heavy factories and one-line monkeypatch stubs. A stand-in's parameter list mirrors the real object's, argument count included.
 "tests/*" = ["PLR0913", "PLR0917", "PLW0108"]
 
+[tool.pyright]
+# docs/*.py are the maintainer's gitignored helper scripts, with dependencies the project does not declare.
+include = ["src", "tests"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
@@ -74,6 +78,7 @@ addopts = "-q --strict-markers --strict-config"
 dev = [
     "pytest>=9.2.0",
     "pytest-asyncio>=1.4.1",
+    "pyright[nodejs]>=1.1.414",
     "ruff>=0.17.3",
-    "ty>=0.0.95",
+    "ty==0.0.95",  # Exact: ty's diagnostics may change between any two 0.0.x releases.
 ]
