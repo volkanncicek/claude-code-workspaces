@@ -11,13 +11,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Local, never committed
-*.local.md
-
-# The maintainer's codegraph index and its Claude Code wiring; contributors do not run codegraph.
-.codegraph/
-.mcp.json
-
 # Local helper scripts kept next to the working notes, not part of the package.
 docs/*.py
 
@@ -38,5 +31,9 @@ Thumbs.db
 
 # Claude Code
 .claude/settings.local.json
+.mcp.json
 .claude/settings.json
 .claude/CLAUDE.md
+
+# CodeGraph
+.codegraph/
