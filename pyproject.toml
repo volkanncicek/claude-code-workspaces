@@ -68,11 +68,13 @@ extend-immutable-calls = ["typer.Argument", "typer.Option"]
 # docs/*.py are the maintainer's gitignored helper scripts, with dependencies the project does not declare.
 include = ["src", "tests"]
 
-[tool.pytest.ini_options]
+[tool.pytest]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-# `--strict-config` turns a typo in this very table into an error instead of a silently ignored setting.
-addopts = "-q --strict-markers --strict-config"
+addopts = ["-q"]
+# `strict_config` turns a typo in this very table into an error instead of a silently ignored setting.
+strict_config = true
+strict_markers = true
 
 [dependency-groups]
 dev = [
