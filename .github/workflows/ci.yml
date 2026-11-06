@@ -5,44 +5,98 @@ on:
     branches: [main]
   pull_request:
 
-# Stated here rather than inherited from a repository setting that can change without touching this file. This workflow runs on `pull_request`, so it executes code from forks; reading the checkout is all it ever needs.
-permissions:
-  contents: read
+# Nothing by default; each job states the one permission it needs. This workflow runs on `pull_request`, so it executes code from forks, and reading the checkout is all any job here ever needs.
+permissions: {}
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Only a superseded pull-request run is cancelled. Every push to main runs to the end, so each commit there keeps its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Every `uv sync` and `uv run` fails instead of silently re-resolving, so a dependency change committed without its lockfile update cannot pass green.
+  UV_LOCKED: "1"
 
 jobs:
-  check:
-    # Windows is the platform ccw launches panes on; Ubuntu is here to prove the core is platform independent, so it runs the same suite rather than skipping it.
+  hooks:
+    # The lint, format and secret checks, from the same .pre-commit-config.yaml the workstation runs. Ruff runs here and nowhere else.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - run: uv run prek run --all-files --show-diff-on-failure
+
+  test:
+    # Windows is the platform ccw launches panes on; Ubuntu is here to prove the core is platform independent, so it runs the same suite rather than skipping it. Python runs from the requires-python floor to the newest release.
+    name: test (${{ matrix.os }}, ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        python: ["3.13", "3.14", "3.15"]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Install uv
-        # setup-uv stopped publishing a moving major tag after v1, so this is the exact release. Dependabot bumps it.
-        uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
-
-      - name: Install dependencies
-        # `--locked` fails instead of silently re-resolving, so a dependency change committed without its lockfile update cannot pass green. No `--all-extras` (no optional dependencies are declared) and no `--dev` (installing the dev group is the default); both read as load-bearing when they do nothing.
-        run: uv sync --locked
-
-      - name: Lint
-        run: uv run ruff check .
-
-      - name: Format check
-        run: uv run ruff format --check .
+          python-version: ${{ matrix.python }}
 
       - name: Type check
-        run: uv run ty check
+        run: |
+          uv run ty check
+          uv run pyright
 
       - name: Test
         run: uv run pytest
+
+  lowest-direct:
+    # The published package promises the lower bounds in pyproject.toml, which the lockfile never exercises; this resolves every direct dependency to its floor and runs the suite against that.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      UV_LOCKED: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.13"
+
+      - run: uv sync --resolution lowest-direct
+
+      - run: uv run --no-sync pytest
+
+  zizmor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: zizmorcore/zizmor-action@53290badfa369cb0bf7ad16342cb62c2fa47ac7b # v0.8.0
+        with:
+          # Findings fail the job and print in its log; uploading them to code scanning would need security-events: write.
+          advanced-security: false
