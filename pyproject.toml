@@ -80,6 +80,7 @@ strict_markers = true
 dev = [
     "pytest>=9.2.0",
     "pytest-asyncio>=1.4.1",
+    "prek>=0.5.7",
     "pyright[nodejs]>=1.1.414",
     "ruff>=0.17.3",
     "ty==0.0.95",  # Exact: ty's diagnostics may change between any two 0.0.x releases.
