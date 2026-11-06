@@ -1,9 +1,21 @@
 version: 2
+
+# Every ecosystem waits a week before proposing a release, because a hijacked tag or a bad release is usually yanked within days; zizmor's dependabot-cooldown audit enforces at least this. Each ecosystem's minor and patch updates arrive as one PR, since under the strict status-check rule every merged PR forces the next one to rebase and rerun CI. Majors stay out of the groups so each is read on its own.
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Istanbul
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: "ci"
 
@@ -12,5 +24,33 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Istanbul
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
     commit-message:
       prefix: "deps"
+
+  # The rev-pinned hooks in .pre-commit-config.yaml; the local hooks are skipped, their versions come from uv.lock.
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Istanbul
+    cooldown:
+      default-days: 7
+    groups:
+      hooks:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "hooks"
