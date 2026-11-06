@@ -8,7 +8,7 @@ For a clear bug fix, a typo, or anything obviously self-contained, just open a p
 
 The project uses [uv](https://docs.astral.sh/uv/) and needs Python 3.13 or later.
 
-```
+```shell
 uv sync
 uv run ccw          # the TUI, from source
 uv run ccw --help   # the CLI
@@ -20,7 +20,7 @@ Add dependencies with `uv add <package>` rather than editing pins by hand, so `u
 
 CI runs exactly these four, on Windows and on Ubuntu:
 
-```
+```shell
 uv run ruff check .
 uv run ruff format --check .
 uv run ty check

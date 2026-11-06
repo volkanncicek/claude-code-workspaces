@@ -8,7 +8,7 @@
 
 `ccw` reads every conversation Claude Code has saved on disk, including ones that finished months ago, started on another machine, or never ran under a session manager. Each one reopens in its own directory, resuming the right conversation.
 
-```
+```shell
 ccw            # the TUI: search, keep, and open a set
 ccw list       # your named workspaces
 ccw restore    # reopen what was running before a crash or a reboot
@@ -41,7 +41,7 @@ Or run it once without installing: `uvx --from claude-code-workspaces ccw`.
 `ccw` opens a table of your conversations. Nothing is written and no terminal opens until you ask.
 
 | Key | Does |
-|---|---|
+| --- | --- |
 | `/` | search |
 | `o` / `f` | resume / fork the conversation |
 | `k` | keep it at the top of the list |
@@ -69,7 +69,7 @@ Claude Code now handles a single session well: `claude agents` browses them, `/r
 Several good tools read the same transcript store:
 
 | Project | What it is |
-|---|---|
+| --- | --- |
 | [ccmanager](https://github.com/kbwo/ccmanager) | A TUI that manages sessions across eight agent CLIs, without needing tmux |
 | [claude-squad](https://github.com/smtg-ai/claude-squad) | Multiple agents in tmux, each in its own git worktree |
 | [claude-history](https://github.com/raine/claude-history) | Fuzzy search across your transcripts, then resume or fork the hit |
